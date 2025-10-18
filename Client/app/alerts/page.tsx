@@ -22,9 +22,10 @@ export default function AlertsPage() {
   const [filterSeverity, setFilterSeverity] = useState<string>("");
   const [summary, setSummary] = useState({
     total: 0,
-    critical: 0,
-    warning: 0,
-    info: 0,
+    lowStock: 0,
+    nearExpiry: 0,
+    expired: 0,
+    overstock: 0,
   });
 
   useEffect(() => {
@@ -87,9 +88,19 @@ export default function AlertsPage() {
   const fetchSummary = async () => {
     try {
       const response = await alertsAPI.getSummary();
+      console.log("Alert Summary Response:", response);
+      console.log("Summary Data:", response.data);
       setSummary(response.data);
     } catch (error) {
       console.error("Failed to fetch summary:", error);
+      // Set default values on error
+      setSummary({
+        total: 0,
+        lowStock: 0,
+        nearExpiry: 0,
+        expired: 0,
+        overstock: 0,
+      });
     }
   };
 
@@ -127,24 +138,32 @@ export default function AlertsPage() {
       </div>
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
+      <div className="grid grid-cols-1 md:grid-cols-5 gap-6 mb-6">
         <div className="bg-white p-6 rounded-lg shadow">
           <p className="text-sm text-gray-600">Total Alerts</p>
           <p className="text-3xl font-bold text-gray-900">{summary.total}</p>
         </div>
         <div className="bg-white p-6 rounded-lg shadow border-l-4 border-red-500">
-          <p className="text-sm text-gray-600">Critical</p>
-          <p className="text-3xl font-bold text-red-600">{summary.critical}</p>
+          <p className="text-sm text-gray-600">Low Stock</p>
+          <p className="text-3xl font-bold text-red-600">{summary.lowStock}</p>
         </div>
         <div className="bg-white p-6 rounded-lg shadow border-l-4 border-yellow-500">
-          <p className="text-sm text-gray-600">Warning</p>
+          <p className="text-sm text-gray-600">Near Expiry</p>
           <p className="text-3xl font-bold text-yellow-600">
-            {summary.warning}
+            {summary.nearExpiry}
+          </p>
+        </div>
+        <div className="bg-white p-6 rounded-lg shadow border-l-4 border-orange-500">
+          <p className="text-sm text-gray-600">Expired</p>
+          <p className="text-3xl font-bold text-orange-600">
+            {summary.expired}
           </p>
         </div>
         <div className="bg-white p-6 rounded-lg shadow border-l-4 border-blue-500">
-          <p className="text-sm text-gray-600">Info</p>
-          <p className="text-3xl font-bold text-blue-600">{summary.info}</p>
+          <p className="text-sm text-gray-600">Overstock</p>
+          <p className="text-3xl font-bold text-blue-600">
+            {summary.overstock}
+          </p>
         </div>
       </div>
 

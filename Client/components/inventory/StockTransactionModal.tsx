@@ -12,9 +12,12 @@ const stockTransactionSchema = z.object({
   reason: z.string().min(1, "Reason is required"),
   notes: z.string().optional(),
   partyName: z.string().optional(),
+  partyType: z.enum(["supplier", "customer", "other"]).optional(),
   partyContact: z.string().optional(),
   referenceNumber: z.string().optional(),
-  unitCost: z.number().optional(),
+  invoiceNumber: z.string().optional(),
+  unitPrice: z.number().min(0).optional(),
+  performedBy: z.string().optional(),
 });
 
 type StockTransactionFormData = z.infer<typeof stockTransactionSchema>;
@@ -27,23 +30,25 @@ interface StockTransactionModalProps {
   type: "in" | "out";
 }
 
-const stockInReasons: TransactionReason[] = [
-  "Purchase",
-  "Return from Customer",
-  "Production",
-  "Transfer In",
-  "Adjustment",
-  "Other",
+const stockInReasons = [
+  { value: "purchase", label: "Purchase from Supplier" },
+  { value: "return", label: "Customer Return" },
+  { value: "production", label: "Production/Manufacturing" },
+  { value: "transfer", label: "Transfer In" },
+  { value: "adjustment", label: "Stock Adjustment" },
+  { value: "other", label: "Other" },
 ];
 
-const stockOutReasons: TransactionReason[] = [
-  "Sale",
-  "Return to Supplier",
-  "Damaged",
-  "Expired",
-  "Transfer Out",
-  "Adjustment",
-  "Other",
+const stockOutReasons = [
+  { value: "sale", label: "Sale to Customer" },
+  { value: "return", label: "Return to Supplier" },
+  { value: "damage", label: "Damaged/Defective" },
+  { value: "expired", label: "Expired/Spoiled" },
+  { value: "theft", label: "Theft/Loss" },
+  { value: "transfer", label: "Transfer Out" },
+  { value: "sample", label: "Sample/Demo" },
+  { value: "adjustment", label: "Stock Adjustment" },
+  { value: "other", label: "Other" },
 ];
 
 export default function StockTransactionModal({
@@ -60,11 +65,24 @@ export default function StockTransactionModal({
     formState: { errors, isSubmitting },
   } = useForm<StockTransactionFormData>({
     resolver: zodResolver(stockTransactionSchema),
+    defaultValues: {
+      quantity: 1,
+      reason: "",
+      notes: "",
+      partyName: "",
+      partyType: type === "in" ? "supplier" : "customer",
+      partyContact: "",
+      referenceNumber: "",
+      invoiceNumber: "",
+      unitPrice: item?.costPrice || undefined,
+      performedBy: "",
+    },
   });
 
   const handleFormSubmit = async (data: StockTransactionFormData) => {
     await onSubmit(data);
     reset();
+    onClose();
   };
 
   if (!isOpen || !item) return null;
@@ -139,8 +157,8 @@ export default function StockTransactionModal({
                 >
                   <option value="">Select Reason</option>
                   {reasons.map((reason) => (
-                    <option key={reason} value={reason}>
-                      {reason}
+                    <option key={reason.value} value={reason.value}>
+                      {reason.label}
                     </option>
                   ))}
                 </select>
@@ -154,12 +172,12 @@ export default function StockTransactionModal({
               {type === "in" && (
                 <div>
                   <label className="block text-sm font-medium text-gray-700">
-                    Unit Cost
+                    Unit Price
                   </label>
                   <input
                     type="number"
                     step="0.01"
-                    {...register("unitCost", { valueAsNumber: true })}
+                    {...register("unitPrice", { valueAsNumber: true })}
                     className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm px-3 py-2 border"
                     placeholder="Cost per unit"
                   />
@@ -182,6 +200,21 @@ export default function StockTransactionModal({
 
               <div>
                 <label className="block text-sm font-medium text-gray-700">
+                  Party Type
+                </label>
+                <select
+                  {...register("partyType")}
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm px-3 py-2 border"
+                >
+                  <option value="">Select Type</option>
+                  <option value="supplier">Supplier</option>
+                  <option value="customer">Customer</option>
+                  <option value="other">Other</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700">
                   Party Contact
                 </label>
                 <input
@@ -200,7 +233,31 @@ export default function StockTransactionModal({
                   type="text"
                   {...register("referenceNumber")}
                   className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm px-3 py-2 border"
-                  placeholder="Invoice/PO number"
+                  placeholder="PO/Invoice number"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700">
+                  Invoice Number
+                </label>
+                <input
+                  type="text"
+                  {...register("invoiceNumber")}
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm px-3 py-2 border"
+                  placeholder="Invoice number"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700">
+                  Performed By
+                </label>
+                <input
+                  type="text"
+                  {...register("performedBy")}
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm px-3 py-2 border"
+                  placeholder="Your name or employee name"
                 />
               </div>
 

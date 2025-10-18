@@ -296,7 +296,7 @@ const stockAdjustment = async (req, res) => {
 };
 
 // @desc    Get transaction statistics
-// @route   GET /api/transactions/stats
+// @route   GET /api/transactions/stats/summary
 // @access  Public
 const getTransactionStats = async (req, res) => {
   try {
@@ -309,7 +309,8 @@ const getTransactionStats = async (req, res) => {
       if (endDate) dateFilter.transactionDate.$lte = new Date(endDate);
     }
 
-    const stats = await StockTransaction.aggregate([
+    // Get aggregated stats by type
+    const statsAggregation = await StockTransaction.aggregate([
       { $match: dateFilter },
       {
         $group: {
@@ -321,7 +322,23 @@ const getTransactionStats = async (req, res) => {
       },
     ]);
 
-    const recentTransactions = await StockTransaction.find()
+    // Transform stats into the expected format
+    const statsMap = statsAggregation.reduce((acc, stat) => {
+      acc[stat._id] = stat;
+      return acc;
+    }, {});
+
+    const totalIn = statsMap.in?.count || 0;
+    const totalOut = statsMap.out?.count || 0;
+    const totalAdjustments = statsMap.adjustment?.count || 0;
+
+    // Calculate total value from all transactions
+    const totalValue = statsAggregation.reduce((sum, stat) => {
+      return sum + (stat.totalAmount || 0);
+    }, 0);
+
+    // Get recent transactions for additional context
+    const recentTransactions = await StockTransaction.find(dateFilter)
       .populate('itemId', 'name sku')
       .sort({ transactionDate: -1 })
       .limit(10);
@@ -329,7 +346,11 @@ const getTransactionStats = async (req, res) => {
     res.status(200).json({
       success: true,
       data: {
-        stats,
+        totalIn,
+        totalOut,
+        totalAdjustments,
+        totalValue,
+        byType: statsAggregation, // Keep detailed stats for potential future use
         recentTransactions,
       },
     });

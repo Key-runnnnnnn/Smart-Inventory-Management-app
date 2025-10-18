@@ -192,17 +192,27 @@ export default function Dashboard() {
             Top Categories
           </h3>
           <div className="space-y-3">
-            {analytics?.categoryDistribution?.slice(0, 3).map((cat) => (
-              <div
-                key={cat.category}
-                className="flex justify-between items-center"
-              >
-                <span className="text-sm text-gray-600">{cat.category}</span>
-                <span className="text-sm font-semibold text-gray-900">
-                  {cat.count} items
-                </span>
+            {analytics?.categoryDistribution &&
+            analytics.categoryDistribution.length > 0 ? (
+              analytics.categoryDistribution.slice(0, 3).map((cat, index) => (
+                <div
+                  key={cat.category || `category-${index}`}
+                  className="flex justify-between items-center"
+                >
+                  <span className="text-sm text-gray-600">
+                    {cat.category || "Uncategorized"}
+                  </span>
+                  <span className="text-sm font-semibold text-gray-900">
+                    {cat.count} items
+                  </span>
+                </div>
+              ))
+            ) : (
+              <div className="text-center text-gray-500 py-4">
+                <Package className="w-8 h-8 mx-auto mb-2 text-gray-300" />
+                <p className="text-sm">No inventory items found</p>
               </div>
-            ))}
+            )}
           </div>
         </div>
       </div>

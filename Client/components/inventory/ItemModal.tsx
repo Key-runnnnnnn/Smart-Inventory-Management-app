@@ -21,11 +21,18 @@ const itemSchema = z.object({
   sellingPrice: z.number().min(0, "Selling price must be 0 or greater"),
   supplierName: z.string().optional(),
   supplierContact: z.string().optional(),
+  supplierContactPerson: z.string().optional(),
+  supplierEmail: z
+    .string()
+    .email("Invalid email format")
+    .optional()
+    .or(z.literal("")),
   warehouseLocation: z.string().optional(),
   rackNumber: z.string().optional(),
   batchNumber: z.string().optional(),
   expiryDate: z.string().optional(),
   manufacturingDate: z.string().optional(),
+  notes: z.string().optional(),
   status: z.enum(["active", "inactive", "discontinued"]),
 });
 
@@ -70,10 +77,29 @@ export default function ItemModal({
     register,
     handleSubmit,
     reset,
+    watch,
+    setValue,
     formState: { errors, isSubmitting },
   } = useForm<ItemFormData>({
     resolver: zodResolver(itemSchema),
   });
+
+  const watchedCategory = watch("category");
+  const watchedName = watch("name");
+
+  // Auto-generate SKU based on category and name
+  const generateSKU = () => {
+    if (watchedCategory && watchedName) {
+      const categoryCode = watchedCategory.substring(0, 3).toUpperCase();
+      const nameCode = watchedName
+        .replace(/\s+/g, "")
+        .substring(0, 5)
+        .toUpperCase();
+      const timestamp = Date.now().toString().slice(-4);
+      const sku = `${categoryCode}-${nameCode}-${timestamp}`;
+      setValue("sku", sku);
+    }
+  };
 
   useEffect(() => {
     if (item) {
@@ -91,6 +117,8 @@ export default function ItemModal({
         sellingPrice: item.sellingPrice,
         supplierName: item.supplier?.name || "",
         supplierContact: item.supplier?.phone || "",
+        supplierContactPerson: item.supplier?.contactPerson || "",
+        supplierEmail: item.supplier?.email || "",
         warehouseLocation: item.warehouseLocation || "",
         rackNumber: item.rackNumber || "",
         batchNumber: item.batchNumber || "",
@@ -100,13 +128,34 @@ export default function ItemModal({
         manufacturingDate: item.manufacturingDate
           ? new Date(item.manufacturingDate).toISOString().split("T")[0]
           : "",
+        notes: item.notes || "",
         status: item.status || "active",
       });
     } else {
+      // Set better defaults for new items
+      const today = new Date().toISOString().split("T")[0];
       reset({
+        sku: "",
+        name: "",
+        description: "",
+        category: "",
+        subCategory: "",
+        unit: "pcs",
         quantity: 0,
         reorderLevel: 10,
+        maxStockLevel: undefined,
         costPrice: 0,
+        sellingPrice: 0,
+        supplierName: "",
+        supplierContact: "",
+        supplierContactPerson: "",
+        supplierEmail: "",
+        warehouseLocation: "",
+        rackNumber: "",
+        batchNumber: "",
+        expiryDate: "",
+        manufacturingDate: today,
+        notes: "",
         status: "active",
       });
     }
@@ -155,11 +204,21 @@ export default function ItemModal({
                   <label className="block text-sm font-medium text-gray-700">
                     SKU *
                   </label>
-                  <input
-                    type="text"
-                    {...register("sku")}
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm px-3 py-2 border"
-                  />
+                  <div className="mt-1 flex rounded-md shadow-sm">
+                    <input
+                      type="text"
+                      {...register("sku")}
+                      className="flex-1 block w-full rounded-l-md border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm px-3 py-2 border"
+                    />
+                    <button
+                      type="button"
+                      onClick={generateSKU}
+                      className="inline-flex items-center px-3 py-2 border border-l-0 border-gray-300 rounded-r-md bg-gray-50 text-gray-500 text-sm hover:bg-gray-100"
+                      title="Auto-generate SKU"
+                    >
+                      🎲
+                    </button>
+                  </div>
                   {errors.sku && (
                     <p className="mt-1 text-sm text-red-600">
                       {errors.sku.message}
@@ -343,13 +402,40 @@ export default function ItemModal({
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700">
-                    Supplier Contact
+                    Supplier Contact Person
+                  </label>
+                  <input
+                    type="text"
+                    {...register("supplierContactPerson")}
+                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm px-3 py-2 border"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">
+                    Supplier Phone
                   </label>
                   <input
                     type="text"
                     {...register("supplierContact")}
                     className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm px-3 py-2 border"
                   />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">
+                    Supplier Email
+                  </label>
+                  <input
+                    type="email"
+                    {...register("supplierEmail")}
+                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm px-3 py-2 border"
+                  />
+                  {errors.supplierEmail && (
+                    <p className="mt-1 text-sm text-red-600">
+                      {errors.supplierEmail.message}
+                    </p>
+                  )}
                 </div>
 
                 {/* Additional Details */}
@@ -408,7 +494,7 @@ export default function ItemModal({
                   />
                 </div>
 
-                <div className="md:col-span-2">
+                <div>
                   <label className="block text-sm font-medium text-gray-700">
                     Status *
                   </label>
@@ -425,6 +511,18 @@ export default function ItemModal({
                       {errors.status.message}
                     </p>
                   )}
+                </div>
+
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-medium text-gray-700">
+                    Notes
+                  </label>
+                  <textarea
+                    {...register("notes")}
+                    rows={3}
+                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm px-3 py-2 border"
+                    placeholder="Additional notes about this item..."
+                  />
                 </div>
               </div>
             </div>

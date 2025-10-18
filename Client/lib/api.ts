@@ -3,6 +3,8 @@ import axios from "axios";
 const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
 
+console.log("API_BASE_URL:", API_BASE_URL);
+
 // Export the base URL for direct usage (e.g., file downloads)
 export const getApiBaseUrl = () => API_BASE_URL;
 
@@ -36,6 +38,11 @@ apiClient.interceptors.response.use(
   },
   (error) => {
     // Better error handling
+    console.error("Full error object:", error);
+    console.error("Error has response?", !!error.response);
+    console.error("Error has request?", !!error.request);
+    console.error("Error message:", error.message);
+
     if (error.response) {
       // The request was made and the server responded with a status code
       // that falls out of the range of 2xx
@@ -46,14 +53,21 @@ apiClient.interceptors.response.use(
       // Only log in development
       if (process.env.NODE_ENV === "development") {
         console.error("API Error:", {
+          url: error.config?.url,
+          method: error.config?.method,
           status: error.response.status,
+          statusText: error.response.statusText,
           message: message,
           data: errorData,
+          fullError: error,
         });
       }
     } else if (error.request) {
       // The request was made but no response was received
-      console.error("Network Error: No response received");
+      console.error("Network Error: No response received", {
+        url: error.config?.url,
+        request: error.request,
+      });
     } else {
       // Something happened in setting up the request
       console.error("Request Error:", error.message);

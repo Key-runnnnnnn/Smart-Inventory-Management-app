@@ -6,10 +6,10 @@ const StockTransaction = require('../models/StockTransaction');
 // @access  Public
 const getAllItems = async (req, res) => {
   try {
-    const { 
-      category, 
-      status, 
-      stockStatus, 
+    const {
+      category,
+      status,
+      stockStatus,
       search,
       sortBy = 'createdAt',
       order = 'desc',
@@ -19,7 +19,7 @@ const getAllItems = async (req, res) => {
 
     // Build filter object
     const filter = {};
-    
+
     if (category) filter.category = category;
     if (status) filter.status = status;
     if (search) {
@@ -108,7 +108,42 @@ const getItemById = async (req, res) => {
 // @access  Public
 const createItem = async (req, res) => {
   try {
-    const item = await InventoryItem.create(req.body);
+    // Transform data to match model structure
+    const itemData = { ...req.body };
+
+    // Handle supplier data transformation
+    if (req.body.supplierName || req.body.supplierContact) {
+      itemData.supplier = {
+        name: req.body.supplierName || '',
+        phone: req.body.supplierContact || '',
+        contactPerson: req.body.supplierContactPerson || '',
+        email: req.body.supplierEmail || '',
+      };
+
+      // Remove flat supplier fields
+      delete itemData.supplierName;
+      delete itemData.supplierContact;
+      delete itemData.supplierContactPerson;
+      delete itemData.supplierEmail;
+    }
+
+    // Ensure dates are properly formatted
+    if (itemData.expiryDate && itemData.expiryDate !== '') {
+      itemData.expiryDate = new Date(itemData.expiryDate);
+    } else {
+      delete itemData.expiryDate;
+    }
+
+    if (itemData.manufacturingDate && itemData.manufacturingDate !== '') {
+      itemData.manufacturingDate = new Date(itemData.manufacturingDate);
+    } else {
+      delete itemData.manufacturingDate;
+    }
+
+    // Set lastRestocked to current date for new items
+    itemData.lastRestocked = new Date();
+
+    const item = await InventoryItem.create(itemData);
 
     res.status(201).json({
       success: true,
@@ -122,7 +157,7 @@ const createItem = async (req, res) => {
         message: 'SKU already exists',
       });
     }
-    
+
     res.status(400).json({
       success: false,
       message: 'Error creating item',
@@ -254,19 +289,26 @@ const getExpiringItems = async (req, res) => {
 // @access  Public
 const getInventoryStats = async (req, res) => {
   try {
-    const totalItems = await InventoryItem.countDocuments({ status: 'active' });
+    const total = await InventoryItem.countDocuments({ status: 'active' });
     const totalStockValue = await InventoryItem.aggregate([
       { $match: { status: 'active' } },
       { $group: { _id: null, total: { $sum: '$stockValue' } } },
     ]);
 
-    const lowStockCount = await InventoryItem.countDocuments({
+    const lowStock = await InventoryItem.countDocuments({
       $expr: { $lte: ['$quantity', '$reorderLevel'] },
+      status: 'active',
+      quantity: { $gt: 0 }, // Ensure we don't count out of stock items as low stock
+    });
+
+    const outOfStock = await InventoryItem.countDocuments({
+      quantity: 0,
       status: 'active',
     });
 
-    const outOfStockCount = await InventoryItem.countDocuments({
-      quantity: 0,
+    // Calculate inStock (items that are not low stock and not out of stock)
+    const inStock = await InventoryItem.countDocuments({
+      $expr: { $gt: ['$quantity', '$reorderLevel'] },
       status: 'active',
     });
 
@@ -279,10 +321,11 @@ const getInventoryStats = async (req, res) => {
     res.status(200).json({
       success: true,
       data: {
-        totalItems,
+        total,
+        inStock,
+        lowStock,
+        outOfStock,
         totalStockValue: totalStockValue[0]?.total || 0,
-        lowStockCount,
-        outOfStockCount,
         categoryDistribution,
       },
     });

@@ -192,14 +192,14 @@ export type Unit =
   | "meter";
 
 export type TransactionReason =
-  | "Purchase"
-  | "Sale"
-  | "Return from Customer"
-  | "Return to Supplier"
-  | "Damaged"
-  | "Expired"
-  | "Transfer In"
-  | "Transfer Out"
-  | "Production"
-  | "Adjustment"
-  | "Other";
+  | "purchase"
+  | "sale"
+  | "return"
+  | "damage"
+  | "expired"
+  | "theft"
+  | "adjustment"
+  | "transfer"
+  | "production"
+  | "sample"
+  | "other";

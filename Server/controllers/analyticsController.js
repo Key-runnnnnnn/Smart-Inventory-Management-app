@@ -55,6 +55,15 @@ const getDashboardAnalytics = async (req, res) => {
         },
       },
       { $sort: { totalValue: -1 } },
+      {
+        $project: {
+          _id: 1,
+          category: '$_id',
+          count: 1,
+          totalValue: 1,
+          totalQuantity: 1,
+        },
+      },
     ]);
 
     // Recent transactions (last 7 days)
@@ -136,11 +145,14 @@ const getTopPerformingItems = async (req, res) => {
       { $unwind: '$itemDetails' },
       {
         $project: {
+          _id: '$_id',
           itemId: '$_id',
           name: '$itemDetails.name',
           sku: '$itemDetails.sku',
           category: '$itemDetails.category',
-          currentStock: '$itemDetails.quantity',
+          quantity: '$itemDetails.quantity',
+          unit: '$itemDetails.unit',
+          stockValue: '$itemDetails.stockValue',
           totalQuantitySold: 1,
           totalRevenue: 1,
           transactionCount: 1,
@@ -179,11 +191,14 @@ const getTopPerformingItems = async (req, res) => {
       { $unwind: '$itemDetails' },
       {
         $project: {
+          _id: '$_id',
           itemId: '$_id',
           name: '$itemDetails.name',
           sku: '$itemDetails.sku',
           category: '$itemDetails.category',
-          currentStock: '$itemDetails.quantity',
+          quantity: '$itemDetails.quantity',
+          unit: '$itemDetails.unit',
+          stockValue: '$itemDetails.stockValue',
           totalQuantitySold: 1,
           totalRevenue: 1,
           transactionCount: 1,
@@ -195,6 +210,7 @@ const getTopPerformingItems = async (req, res) => {
     res.status(200).json({
       success: true,
       data: {
+        items: topItemsByQuantity,
         topByQuantity: topItemsByQuantity,
         topByRevenue: topItemsByRevenue,
         period: `Last ${days} days`,
@@ -221,7 +237,7 @@ const getSlowMovingItems = async (req, res) => {
 
     // Get all active items
     const allItems = await InventoryItem.find({ status: 'active' }).select(
-      '_id name sku category quantity stockValue lastRestocked createdAt imageUrl'
+      '_id name sku category quantity unit stockValue lastRestocked createdAt imageUrl'
     );
 
     // Get items with transactions in the specified period
@@ -263,29 +279,37 @@ const getSlowMovingItems = async (req, res) => {
         );
 
         return {
+          _id: item._id,
           itemId: item._id,
           name: item.name,
           sku: item.sku,
           category: item.category,
           quantity: item.quantity,
+          unit: item.unit || 'pcs',
           stockValue: item.stockValue,
           totalQuantitySold: salesData?.totalQuantitySold || 0,
           lastSaleDate: salesData?.lastSaleDate || null,
           daysSinceLastSale,
+          daysSinceLastTransaction: daysSinceLastSale,
           daysSinceAdded,
           imageUrl: item.imageUrl,
         };
       })
       .filter((item) => {
         // Item is slow-moving if:
-        // 1. No sales in the period, OR
-        // 2. Very low sales (less than 10% of current stock), OR
-        // 3. No sales for more than 30 days but has stock
+        // 1. No sales at all in the period AND item has been added for more than 30 days, OR
+        // 2. Very low sales (less than 5 units total in the period) AND low turnover (less than 5% of stock), OR
+        // 3. No sales for more than 45 days (even if had sales before)
+
+        const hasNoSales = item.totalQuantitySold === 0;
+        const hasVeryLowSales = item.totalQuantitySold > 0 && item.totalQuantitySold < 5;
+        const hasLowTurnover = item.quantity > 0 && item.totalQuantitySold < item.quantity * 0.05;
+        const noRecentSales = item.daysSinceLastSale && item.daysSinceLastSale > 45;
+
         return (
-          (item.totalQuantitySold === 0 && item.daysSinceAdded > 30) ||
-          (item.totalQuantitySold > 0 &&
-            item.totalQuantitySold < item.quantity * 0.1) ||
-          (item.daysSinceLastSale && item.daysSinceLastSale > 30)
+          (hasNoSales && item.daysSinceAdded > 30) ||
+          (hasVeryLowSales && hasLowTurnover) ||
+          noRecentSales
         );
       })
       .sort((a, b) => b.stockValue - a.stockValue)
@@ -467,32 +491,32 @@ const getSalesTrends = async (req, res) => {
       { $sort: { date: 1 } },
     ]);
 
-    // Also get purchase trends
-    const purchaseTrends = await StockTransaction.aggregate([
-      {
-        $match: {
-          type: 'in',
-          reason: 'purchase',
-          transactionDate: { $gte: dateFilter },
-        },
-      },
-      {
-        $group: {
-          _id: dateFormat,
-          totalPurchases: { $sum: '$totalAmount' },
-          totalQuantity: { $sum: '$quantity' },
-          transactionCount: { $sum: 1 },
-          date: { $first: '$transactionDate' },
-        },
-      },
-      { $sort: { date: 1 } },
-    ]);
+    // Transform salesTrends to simpler format with formatted labels
+    const trends = salesTrends.map((trend) => {
+      let dateLabel = '';
+      if (groupBy === 'hour') {
+        dateLabel = `${trend._id.month}/${trend._id.day} ${trend._id.hour}:00`;
+      } else if (groupBy === 'week') {
+        dateLabel = `Week ${trend._id.week}, ${trend._id.year}`;
+      } else if (groupBy === 'month') {
+        dateLabel = `${trend._id.month}/${trend._id.year}`;
+      } else {
+        dateLabel = `${trend._id.month}/${trend._id.day}`;
+      }
+
+      return {
+        _id: dateLabel,
+        date: trend.date,
+        quantity: trend.totalQuantity,
+        sales: trend.totalSales,
+        transactionCount: trend.transactionCount,
+      };
+    });
 
     res.status(200).json({
       success: true,
       data: {
-        salesTrends,
-        purchaseTrends,
+        trends: trends,
         period: `Last ${days} days`,
         groupedBy: groupBy,
       },
@@ -561,9 +585,19 @@ const getInventoryValueTrends = async (req, res) => {
       },
     ]);
 
+    // Transform category values into trends format for charts
+    const trends = currentValueByCategory.map((cat) => ({
+      _id: cat._id,
+      category: cat._id,
+      totalValue: cat.totalValue,
+      itemCount: cat.itemCount,
+      totalQuantity: cat.totalQuantity,
+    }));
+
     res.status(200).json({
       success: true,
       data: {
+        trends: trends,
         valueByCategory: currentValueByCategory,
         stockStatusDistribution,
       },

@@ -19,18 +19,18 @@ const inventoryItemSchema = new mongoose.Schema({
     type: String,
     trim: true,
   },
-  
+
   // Categorization
   category: {
     type: String,
     required: [true, 'Category is required'],
-    enum: ['Electronics', 'Clothing', 'Food', 'Furniture', 'Stationery', 'Medical', 'Automotive', 'Other'],
+    enum: ['Electronics', 'Furniture', 'Clothing', 'Food & Beverage', 'Raw Materials', 'Finished Goods', 'Office Supplies', 'Medical', 'Automotive', 'Other'],
   },
   subCategory: {
     type: String,
     trim: true,
   },
-  
+
   // Stock Information
   quantity: {
     type: Number,
@@ -41,7 +41,7 @@ const inventoryItemSchema = new mongoose.Schema({
   unit: {
     type: String,
     required: [true, 'Unit is required'],
-    enum: ['pcs', 'kg', 'ltr', 'box', 'pack', 'dozen', 'meter'],
+    enum: ['pcs', 'kg', 'ltr', 'box', 'pack', 'dozen', 'meter', 'carton', 'bag', 'roll'],
     default: 'pcs',
   },
   reorderLevel: {
@@ -54,7 +54,7 @@ const inventoryItemSchema = new mongoose.Schema({
     type: Number,
     min: [0, 'Max stock level cannot be negative'],
   },
-  
+
   // Pricing
   costPrice: {
     type: Number,
@@ -66,7 +66,7 @@ const inventoryItemSchema = new mongoose.Schema({
     required: [true, 'Selling price is required'],
     min: [0, 'Selling price cannot be negative'],
   },
-  
+
   // Supplier Information
   supplier: {
     name: {
@@ -87,7 +87,7 @@ const inventoryItemSchema = new mongoose.Schema({
       lowercase: true,
     },
   },
-  
+
   // Location & Storage
   warehouseLocation: {
     type: String,
@@ -97,7 +97,7 @@ const inventoryItemSchema = new mongoose.Schema({
     type: String,
     trim: true,
   },
-  
+
   // Expiry & Batch
   expiryDate: {
     type: Date,
@@ -109,26 +109,26 @@ const inventoryItemSchema = new mongoose.Schema({
   manufacturingDate: {
     type: Date,
   },
-  
+
   // Status & Tracking
   status: {
     type: String,
     enum: ['active', 'inactive', 'discontinued'],
     default: 'active',
   },
-  
+
   // Computed fields
   stockValue: {
     type: Number,
     default: 0,
   },
-  
+
   // Image
   imageUrl: {
     type: String,
     trim: true,
   },
-  
+
   // Metadata
   lastRestocked: {
     type: Date,
@@ -144,7 +144,7 @@ const inventoryItemSchema = new mongoose.Schema({
 });
 
 // Virtual for stock status
-inventoryItemSchema.virtual('stockStatus').get(function() {
+inventoryItemSchema.virtual('stockStatus').get(function () {
   if (this.quantity === 0) return 'out-of-stock';
   if (this.quantity <= this.reorderLevel) return 'low-stock';
   if (this.maxStockLevel && this.quantity >= this.maxStockLevel) return 'overstock';
@@ -152,12 +152,12 @@ inventoryItemSchema.virtual('stockStatus').get(function() {
 });
 
 // Virtual for expiry status
-inventoryItemSchema.virtual('expiryStatus').get(function() {
+inventoryItemSchema.virtual('expiryStatus').get(function () {
   if (!this.expiryDate) return null;
-  
+
   const today = new Date();
   const daysUntilExpiry = Math.ceil((this.expiryDate - today) / (1000 * 60 * 60 * 24));
-  
+
   if (daysUntilExpiry < 0) return 'expired';
   if (daysUntilExpiry <= 7) return 'expiring-soon';
   if (daysUntilExpiry <= 30) return 'expiring-this-month';
@@ -165,7 +165,7 @@ inventoryItemSchema.virtual('expiryStatus').get(function() {
 });
 
 // Middleware to calculate stock value before saving
-inventoryItemSchema.pre('save', function(next) {
+inventoryItemSchema.pre('save', function (next) {
   this.stockValue = this.quantity * this.costPrice;
   next();
 });

@@ -38,7 +38,7 @@ export default function AnalyticsPage() {
   const [slowMoving, setSlowMoving] = useState<any[]>([]); // eslint-disable-line @typescript-eslint/no-explicit-any
   const [salesTrends, setSalesTrends] = useState<any[]>([]); // eslint-disable-line @typescript-eslint/no-explicit-any
   const [valueTrends, setValueTrends] = useState<any[]>([]); // eslint-disable-line @typescript-eslint/no-explicit-any
-  const [turnoverData, setTurnoverData] = useState<any[]>([]); // eslint-disable-line @typescript-eslint/no-explicit-any
+  const [turnoverData, setTurnoverData] = useState<any>(null); // eslint-disable-line @typescript-eslint/no-explicit-any
 
   useEffect(() => {
     fetchAnalytics();
@@ -56,20 +56,59 @@ export default function AnalyticsPage() {
         valueTrendsRes,
         turnoverRes,
       ] = await Promise.all([
-        analyticsAPI.getDashboard(),
-        analyticsAPI.getTopItems(),
-        analyticsAPI.getSlowMoving(),
-        analyticsAPI.getSalesTrends(),
-        analyticsAPI.getValueTrends(),
-        analyticsAPI.getTurnover(),
+        analyticsAPI.getDashboard().catch((err) => {
+          console.error("Dashboard API failed:", err);
+          return { data: null };
+        }),
+        analyticsAPI.getTopItems().catch((err) => {
+          console.error("Top Items API failed:", err);
+          return { data: { items: [] } };
+        }),
+        analyticsAPI.getSlowMoving().catch((err) => {
+          console.error("Slow Moving API failed:", err);
+          return { data: [] };
+        }),
+        analyticsAPI.getSalesTrends().catch((err) => {
+          console.error("Sales Trends API failed:", err);
+          return { data: { trends: [] } };
+        }),
+        analyticsAPI.getValueTrends().catch((err) => {
+          console.error("Value Trends API failed:", err);
+          return { data: { trends: [] } };
+        }),
+        analyticsAPI.getTurnover().catch((err) => {
+          console.error("Turnover API failed:", err);
+          return { data: null };
+        }),
       ]);
 
+      console.log("Analytics Data:", {
+        dashboard: dashboardRes.data,
+        topItems: topItemsRes.data,
+        slowMoving: slowMovingRes.data,
+        salesTrends: salesTrendsRes.data,
+        valueTrends: valueTrendsRes.data,
+        turnover: turnoverRes.data,
+      });
+
+      console.log("Setting state:");
+      console.log(
+        "- Dashboard categoryDistribution:",
+        dashboardRes.data?.categoryDistribution
+      );
+      console.log("- Top items array:", topItemsRes.data?.items);
+      console.log("- Slow moving array:", slowMovingRes.data);
+      console.log("- Sales trends array:", salesTrendsRes.data?.trends);
+      console.log("- Value trends array:", valueTrendsRes.data?.trends);
+
       setDashboard(dashboardRes.data);
-      setTopItems(topItemsRes.data.items || []);
-      setSlowMoving(slowMovingRes.data.items || []);
-      setSalesTrends(salesTrendsRes.data.trends || []);
-      setValueTrends(valueTrendsRes.data.trends || []);
-      setTurnoverData(turnoverRes.data.items || []);
+      setTopItems(topItemsRes.data?.items || []);
+      setSlowMoving(slowMovingRes.data || []);
+      setSalesTrends(salesTrendsRes.data?.trends || []);
+      setValueTrends(valueTrendsRes.data?.trends || []);
+      setTurnoverData(turnoverRes.data || null);
+
+      console.log("State set complete");
     } catch (error) {
       console.error("Failed to fetch analytics:", error);
     } finally {
@@ -94,19 +133,16 @@ export default function AnalyticsPage() {
       totalValue: cat.totalValue,
     })) || [];
 
-  const topItemsChartData = topItems.slice(0, 10).map((item) => ({
+  const topItemsChartData = (topItems || []).slice(0, 10).map((item) => ({
     name:
-      item.name.length > 20 ? item.name.substring(0, 20) + "..." : item.name,
-    quantity: item.quantity,
-    value: item.stockValue,
+      item?.name?.length > 20
+        ? item.name.substring(0, 20) + "..."
+        : item?.name || "N/A",
+    quantity: item?.quantity || 0,
+    value: item?.stockValue || 0,
   }));
 
-  const turnoverChartData = turnoverData.slice(0, 10).map((item) => ({
-    name:
-      item.name.length > 20 ? item.name.substring(0, 20) + "..." : item.name,
-    turnover: item.turnoverRatio,
-    daysToSell: item.daysToSell,
-  }));
+  // Turnover data is a single object, not an array - display as metrics
 
   return (
     <div className="p-6">
@@ -206,88 +242,7 @@ export default function AnalyticsPage() {
             </BarChart>
           </ResponsiveContainer>
         </div>
-
-        {/* Sales Trends */}
-        {salesTrends.length > 0 && (
-          <div className="bg-white p-6 rounded-lg shadow">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">
-              Sales Trends (Last 30 Days)
-            </h2>
-            <ResponsiveContainer width="100%" height={300}>
-              <LineChart data={salesTrends}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="_id" />
-                <YAxis />
-                <Tooltip />
-                <Legend />
-                <Line
-                  type="monotone"
-                  dataKey="quantity"
-                  stroke="#10b981"
-                  name="Quantity Sold"
-                  strokeWidth={2}
-                />
-              </LineChart>
-            </ResponsiveContainer>
-          </div>
-        )}
-
-        {/* Inventory Value Trends */}
-        {valueTrends.length > 0 && (
-          <div className="bg-white p-6 rounded-lg shadow">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">
-              Inventory Value Trends
-            </h2>
-            <ResponsiveContainer width="100%" height={300}>
-              <LineChart data={valueTrends}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="_id" />
-                <YAxis />
-                <Tooltip formatter={(value) => formatCurrency(Number(value))} />
-                <Legend />
-                <Line
-                  type="monotone"
-                  dataKey="totalValue"
-                  stroke="#6366f1"
-                  name="Total Value"
-                  strokeWidth={2}
-                />
-              </LineChart>
-            </ResponsiveContainer>
-          </div>
-        )}
       </div>
-
-      {/* Inventory Turnover */}
-      {turnoverData.length > 0 && (
-        <div className="bg-white p-6 rounded-lg shadow mb-8">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">
-            Inventory Turnover Analysis
-          </h2>
-          <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={turnoverChartData}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="name" angle={-45} textAnchor="end" height={100} />
-              <YAxis yAxisId="left" />
-              <YAxis yAxisId="right" orientation="right" />
-              <Tooltip />
-              <Legend />
-              <Bar
-                yAxisId="left"
-                dataKey="turnover"
-                fill="#8b5cf6"
-                name="Turnover Ratio"
-              />
-              <Bar
-                yAxisId="right"
-                dataKey="daysToSell"
-                fill="#ec4899"
-                name="Days to Sell"
-              />
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
-      )}
 
       {/* Top and Slow Moving Items Tables */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -314,22 +269,33 @@ export default function AnalyticsPage() {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {topItems.slice(0, 5).map((item) => (
-                  <tr key={item._id}>
-                    <td className="px-6 py-4">
-                      <div className="text-sm font-medium text-gray-900">
-                        {item.name}
-                      </div>
-                      <div className="text-sm text-gray-500">{item.sku}</div>
-                    </td>
-                    <td className="px-6 py-4 text-sm text-gray-900">
-                      {item.quantity} {item.unit}
-                    </td>
-                    <td className="px-6 py-4 text-sm font-medium text-gray-900">
-                      {formatCurrency(item.stockValue)}
+                {topItems && topItems.length > 0 ? (
+                  topItems.slice(0, 5).map((item) => (
+                    <tr key={item._id}>
+                      <td className="px-6 py-4">
+                        <div className="text-sm font-medium text-gray-900">
+                          {item.name}
+                        </div>
+                        <div className="text-sm text-gray-500">{item.sku}</div>
+                      </td>
+                      <td className="px-6 py-4 text-sm text-gray-900">
+                        {item.quantity} {item.unit}
+                      </td>
+                      <td className="px-6 py-4 text-sm font-medium text-gray-900">
+                        {formatCurrency(item.stockValue)}
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td
+                      colSpan={3}
+                      className="px-6 py-8 text-center text-sm text-gray-500"
+                    >
+                      No top performing items data available
                     </td>
                   </tr>
-                ))}
+                )}
               </tbody>
             </table>
           </div>
@@ -358,22 +324,33 @@ export default function AnalyticsPage() {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {slowMoving.slice(0, 5).map((item) => (
-                  <tr key={item._id}>
-                    <td className="px-6 py-4">
-                      <div className="text-sm font-medium text-gray-900">
-                        {item.name}
-                      </div>
-                      <div className="text-sm text-gray-500">{item.sku}</div>
-                    </td>
-                    <td className="px-6 py-4 text-sm text-gray-900">
-                      {item.quantity} {item.unit}
-                    </td>
-                    <td className="px-6 py-4 text-sm text-gray-500">
-                      {item.daysSinceLastTransaction || "N/A"} days
+                {slowMoving && slowMoving.length > 0 ? (
+                  slowMoving.slice(0, 5).map((item) => (
+                    <tr key={item._id}>
+                      <td className="px-6 py-4">
+                        <div className="text-sm font-medium text-gray-900">
+                          {item.name}
+                        </div>
+                        <div className="text-sm text-gray-500">{item.sku}</div>
+                      </td>
+                      <td className="px-6 py-4 text-sm text-gray-900">
+                        {item.quantity} {item.unit}
+                      </td>
+                      <td className="px-6 py-4 text-sm text-gray-500">
+                        {item.daysSinceLastTransaction || "N/A"} days
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td
+                      colSpan={3}
+                      className="px-6 py-8 text-center text-sm text-gray-500"
+                    >
+                      No slow moving items data available
                     </td>
                   </tr>
-                ))}
+                )}
               </tbody>
             </table>
           </div>

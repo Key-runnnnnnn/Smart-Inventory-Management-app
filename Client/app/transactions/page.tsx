@@ -15,6 +15,7 @@ import { formatCurrency, formatDateTime } from "@/lib/utils";
 export default function TransactionsPage() {
   const [transactions, setTransactions] = useState<StockTransaction[]>([]);
   const [loading, setLoading] = useState(true);
+  const [statsLoading, setStatsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [filterType, setFilterType] = useState<string>("");
   const [stats, setStats] = useState({
@@ -40,6 +41,7 @@ export default function TransactionsPage() {
       setTransactions(response.data.transactions || response.data);
     } catch (error) {
       console.error("Failed to fetch transactions:", error);
+      setTransactions([]);
     } finally {
       setLoading(false);
     }
@@ -47,10 +49,20 @@ export default function TransactionsPage() {
 
   const fetchStats = async () => {
     try {
+      setStatsLoading(true);
       const response = await transactionsAPI.getStats();
       setStats(response.data);
     } catch (error) {
       console.error("Failed to fetch stats:", error);
+      // Set default values on error
+      setStats({
+        totalIn: 0,
+        totalOut: 0,
+        totalAdjustments: 0,
+        totalValue: 0,
+      });
+    } finally {
+      setStatsLoading(false);
     }
   };
 
@@ -100,22 +112,42 @@ export default function TransactionsPage() {
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
         <div className="bg-white p-6 rounded-lg shadow">
           <p className="text-sm text-gray-600">Total Stock In</p>
-          <p className="text-3xl font-bold text-green-600">{stats.totalIn}</p>
+          <p className="text-3xl font-bold text-green-600">
+            {statsLoading ? (
+              <span className="animate-pulse bg-gray-300 h-8 w-16 block rounded"></span>
+            ) : (
+              stats.totalIn || 0
+            )}
+          </p>
         </div>
         <div className="bg-white p-6 rounded-lg shadow">
           <p className="text-sm text-gray-600">Total Stock Out</p>
-          <p className="text-3xl font-bold text-red-600">{stats.totalOut}</p>
+          <p className="text-3xl font-bold text-red-600">
+            {statsLoading ? (
+              <span className="animate-pulse bg-gray-300 h-8 w-16 block rounded"></span>
+            ) : (
+              stats.totalOut || 0
+            )}
+          </p>
         </div>
         <div className="bg-white p-6 rounded-lg shadow">
           <p className="text-sm text-gray-600">Adjustments</p>
           <p className="text-3xl font-bold text-blue-600">
-            {stats.totalAdjustments}
+            {statsLoading ? (
+              <span className="animate-pulse bg-gray-300 h-8 w-16 block rounded"></span>
+            ) : (
+              stats.totalAdjustments || 0
+            )}
           </p>
         </div>
         <div className="bg-white p-6 rounded-lg shadow">
           <p className="text-sm text-gray-600">Total Value</p>
           <p className="text-3xl font-bold text-gray-900">
-            {formatCurrency(stats.totalValue)}
+            {statsLoading ? (
+              <span className="animate-pulse bg-gray-300 h-8 w-20 block rounded"></span>
+            ) : (
+              formatCurrency(stats.totalValue || 0)
+            )}
           </p>
         </div>
       </div>
@@ -152,7 +184,10 @@ export default function TransactionsPage() {
             </div>
 
             <button
-              onClick={fetchTransactions}
+              onClick={() => {
+                fetchTransactions();
+                fetchStats();
+              }}
               className="p-2 border border-gray-300 rounded-lg hover:bg-gray-50"
               title="Refresh"
             >

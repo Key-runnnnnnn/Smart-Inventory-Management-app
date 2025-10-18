@@ -66,6 +66,13 @@ export default function InventoryPage() {
       setStats(response.data);
     } catch (error) {
       console.error("Failed to fetch stats:", error);
+      // Set default values on error
+      setStats({
+        total: 0,
+        inStock: 0,
+        lowStock: 0,
+        outOfStock: 0,
+      });
     }
   };
 
@@ -98,19 +105,40 @@ export default function InventoryPage() {
 
   const handleItemSubmit = async (data: Record<string, unknown>) => {
     try {
+      // Transform data before sending
+      const transformedData = {
+        ...data,
+        // Ensure numeric fields are properly converted
+        quantity: Number(data.quantity) || 0,
+        reorderLevel: Number(data.reorderLevel) || 10,
+        maxStockLevel: data.maxStockLevel
+          ? Number(data.maxStockLevel)
+          : undefined,
+        costPrice: Number(data.costPrice) || 0,
+        sellingPrice: Number(data.sellingPrice) || 0,
+      };
+
       if (selectedItem) {
-        await inventoryAPI.update(selectedItem._id, data);
+        await inventoryAPI.update(selectedItem._id, transformedData);
         alert("Item updated successfully!");
       } else {
-        await inventoryAPI.create(data);
+        await inventoryAPI.create(transformedData);
         alert("Item created successfully!");
       }
       setShowItemModal(false);
       fetchItems();
       fetchStats();
     } catch (error: unknown) {
-      const err = error as { response?: { data?: { message?: string } } };
-      alert(err.response?.data?.message || "Failed to save item");
+      const err = error as {
+        response?: { data?: { message?: string; error?: string } };
+      };
+      const errorMessage =
+        err.response?.data?.message ||
+        err.response?.data?.error ||
+        "Failed to save item";
+
+      console.error("Error saving item:", error);
+      alert(`Error: ${errorMessage}`);
     }
   };
 
@@ -120,16 +148,37 @@ export default function InventoryPage() {
     if (!selectedItem) return;
 
     try {
-      const payload = {
+      // Transform data to match backend expectations
+      const payload: Record<string, unknown> = {
         itemId: selectedItem._id,
-        quantity: data.quantity,
+        quantity: Number(data.quantity) || 1,
         reason: data.reason,
-        notes: data.notes,
-        partyName: data.partyName,
-        partyContact: data.partyContact,
-        referenceNumber: data.referenceNumber,
-        unitCost: data.unitCost,
+        notes: data.notes || "",
+        referenceNumber: data.referenceNumber || "",
+        invoiceNumber: data.invoiceNumber || "",
+        performedBy: data.performedBy || "System",
       };
+
+      // Add party information if provided
+      if (data.partyName || data.partyContact) {
+        payload.party = {
+          name: data.partyName || "",
+          type: data.partyType || "other",
+          contact: data.partyContact || "",
+        };
+      }
+
+      // Add unit price for stock-in transactions
+      if (stockModalType === "in" && data.unitPrice) {
+        payload.unitPrice = Number(data.unitPrice);
+      }
+
+      // Add unit price for stock-out sales
+      if (stockModalType === "out" && data.reason === "sale") {
+        payload.unitPrice = selectedItem.sellingPrice; // Use item's selling price
+      }
+
+      console.log("Submitting transaction:", payload); // Debug log
 
       if (stockModalType === "in") {
         await transactionsAPI.stockIn(payload);
@@ -143,8 +192,16 @@ export default function InventoryPage() {
       fetchItems();
       fetchStats();
     } catch (error: unknown) {
-      const err = error as { response?: { data?: { message?: string } } };
-      alert(err.response?.data?.message || "Failed to process transaction");
+      const err = error as {
+        response?: { data?: { message?: string; error?: string } };
+      };
+      const errorMessage =
+        err.response?.data?.message ||
+        err.response?.data?.error ||
+        "Failed to process transaction";
+
+      console.error("Error processing transaction:", error);
+      alert(`Error: ${errorMessage}`);
     }
   };
 
@@ -173,19 +230,43 @@ export default function InventoryPage() {
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
         <div className="bg-white p-6 rounded-lg shadow">
           <p className="text-sm text-gray-600">Total Items</p>
-          <p className="text-3xl font-bold text-gray-900">{stats.total}</p>
+          <p className="text-3xl font-bold text-gray-900">
+            {loading ? (
+              <span className="animate-pulse bg-gray-300 h-8 w-16 block rounded"></span>
+            ) : (
+              stats.total || 0
+            )}
+          </p>
         </div>
         <div className="bg-white p-6 rounded-lg shadow">
           <p className="text-sm text-gray-600">In Stock</p>
-          <p className="text-3xl font-bold text-green-600">{stats.inStock}</p>
+          <p className="text-3xl font-bold text-green-600">
+            {loading ? (
+              <span className="animate-pulse bg-gray-300 h-8 w-16 block rounded"></span>
+            ) : (
+              stats.inStock || 0
+            )}
+          </p>
         </div>
         <div className="bg-white p-6 rounded-lg shadow">
           <p className="text-sm text-gray-600">Low Stock</p>
-          <p className="text-3xl font-bold text-yellow-600">{stats.lowStock}</p>
+          <p className="text-3xl font-bold text-yellow-600">
+            {loading ? (
+              <span className="animate-pulse bg-gray-300 h-8 w-16 block rounded"></span>
+            ) : (
+              stats.lowStock || 0
+            )}
+          </p>
         </div>
         <div className="bg-white p-6 rounded-lg shadow">
           <p className="text-sm text-gray-600">Out of Stock</p>
-          <p className="text-3xl font-bold text-red-600">{stats.outOfStock}</p>
+          <p className="text-3xl font-bold text-red-600">
+            {loading ? (
+              <span className="animate-pulse bg-gray-300 h-8 w-16 block rounded"></span>
+            ) : (
+              stats.outOfStock || 0
+            )}
+          </p>
         </div>
       </div>
 

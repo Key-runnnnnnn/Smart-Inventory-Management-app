@@ -51,7 +51,6 @@ export default function ForecastingPage() {
     try {
       setLoading(true);
       const response = await forecastAPI.getItemForecast(selectedItem._id, 30);
-      console.log("Forecast response:", response.data); // Debug log
       setForecast(response.data);
     } catch (error: unknown) {
       const err = error as { response?: { data?: { message?: string } } };
@@ -73,15 +72,12 @@ export default function ForecastingPage() {
       setAiResponse("");
       setShowNewBadge(false);
       const response = await forecastAPI.getRestockSuggestions(aiQuery);
-      console.log("AI Suggestions response:", response.data); // Debug log
-      // Backend returns 'response' field, not 'suggestions'
       setAiResponse(
         response.data.response ||
           response.data.suggestions ||
           "No response received"
       );
       setShowNewBadge(true);
-      // Hide the badge after 3 seconds
       setTimeout(() => setShowNewBadge(false), 3000);
     } catch (error: unknown) {
       const err = error as { response?: { data?: { message?: string } } };

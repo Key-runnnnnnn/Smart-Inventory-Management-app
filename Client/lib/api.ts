@@ -3,9 +3,6 @@ import axios from "axios";
 const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
 
-console.log("API_BASE_URL:", API_BASE_URL);
-
-// Export the base URL for direct usage (e.g., file downloads)
 export const getApiBaseUrl = () => API_BASE_URL;
 
 const apiClient = axios.create({
@@ -63,11 +60,7 @@ apiClient.interceptors.response.use(
         });
       }
     } else if (error.request) {
-      // The request was made but no response was received
-      console.error("Network Error: No response received", {
-        url: error.config?.url,
-        request: error.request,
-      });
+      console.error("Network Error: No response received");
     } else {
       // Something happened in setting up the request
       console.error("Request Error:", error.message);

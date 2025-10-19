@@ -88,12 +88,9 @@ export default function AlertsPage() {
   const fetchSummary = async () => {
     try {
       const response = await alertsAPI.getSummary();
-      console.log("Alert Summary Response:", response);
-      console.log("Summary Data:", response.data);
       setSummary(response.data);
     } catch (error) {
       console.error("Failed to fetch summary:", error);
-      // Set default values on error
       setSummary({
         total: 0,
         lowStock: 0,

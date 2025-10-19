@@ -56,33 +56,14 @@ export default function AnalyticsPage() {
         valueTrendsRes,
         turnoverRes,
       ] = await Promise.all([
-        analyticsAPI.getDashboard().catch((err) => {
-          console.error("Dashboard API failed:", err);
-          return { data: null };
-        }),
-        analyticsAPI.getTopItems().catch((err) => {
-          console.error("Top Items API failed:", err);
-          return { data: { items: [] } };
-        }),
-        analyticsAPI.getSlowMoving().catch((err) => {
-          console.error("Slow Moving API failed:", err);
-          return { data: [] };
-        }),
-        analyticsAPI.getSalesTrends().catch((err) => {
-          console.error("Sales Trends API failed:", err);
-          return { data: { trends: [] } };
-        }),
-        analyticsAPI.getValueTrends().catch((err) => {
-          console.error("Value Trends API failed:", err);
-          return { data: { trends: [] } };
-        }),
-        analyticsAPI.getTurnover().catch((err) => {
-          console.error("Turnover API failed:", err);
-          return { data: null };
-        }),
+        analyticsAPI.getDashboard().catch(() => ({ data: null })),
+        analyticsAPI.getTopItems().catch(() => ({ data: { items: [] } })),
+        analyticsAPI.getSlowMoving().catch(() => ({ data: [] })),
+        analyticsAPI.getSalesTrends().catch(() => ({ data: { trends: [] } })),
+        analyticsAPI.getValueTrends().catch(() => ({ data: { trends: [] } })),
+        analyticsAPI.getTurnover().catch(() => ({ data: null })),
       ]);
 
-      // Axios interceptor unwraps response, so we access properties directly
       const responseData = slowMovingRes as any;
       const slowMovingArray = Array.isArray(responseData.data)
         ? responseData.data

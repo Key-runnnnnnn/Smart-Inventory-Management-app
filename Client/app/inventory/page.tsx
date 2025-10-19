@@ -59,9 +59,6 @@ export default function InventoryPage() {
       if (selectedCategory) params.category = selectedCategory;
 
       const response = await inventoryAPI.getAll(params);
-
-      // The axios interceptor returns response.data, which has this structure:
-      // { success: true, count: 10, total: 20, page: 1, pages: 2, data: [...] }
       const responseData = response as any;
 
       setItems(responseData.data || []);
@@ -80,7 +77,6 @@ export default function InventoryPage() {
       setStats(response.data);
     } catch (error) {
       console.error("Failed to fetch stats:", error);
-      // Set default values on error
       setStats({
         total: 0,
         inStock: 0,
@@ -187,12 +183,9 @@ export default function InventoryPage() {
         payload.unitPrice = Number(data.unitPrice);
       }
 
-      // Add unit price for stock-out sales
       if (stockModalType === "out" && data.reason === "sale") {
-        payload.unitPrice = selectedItem.sellingPrice; // Use item's selling price
+        payload.unitPrice = selectedItem.sellingPrice;
       }
-
-      console.log("Submitting transaction:", payload); // Debug log
 
       if (stockModalType === "in") {
         await transactionsAPI.stockIn(payload);

@@ -16,26 +16,19 @@ const io = new Server(server, {
   },
 });
 
-// Initialize Socket.io
 initializeSocket(io);
-
-// Make io accessible to routes
 app.set('io', io);
 
-// Middleware
 app.use(cors());
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
-// Connect to Database
 connectDB();
 
-// Routes
 app.get('/', (req, res) => {
   res.json({ message: '🚀 Inventory Management API is running!' });
 });
 
-// Import routes (will be created next)
 const inventoryRoutes = require('./routes/inventoryRoutes');
 const transactionRoutes = require('./routes/transactionRoutes');
 const analyticsRoutes = require('./routes/analyticsRoutes');
@@ -50,7 +43,6 @@ app.use('/api/alerts', alertRoutes);
 app.use('/api/reports', reportRoutes);
 app.use('/api/forecast', forecastRoutes);
 
-// Error handling middleware
 app.use((err, req, res, next) => {
   console.error(err.stack);
   res.status(500).json({

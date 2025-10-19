@@ -42,7 +42,6 @@ This document contains ready-to-use JSON data for testing the inventory manageme
 
 ## 📦 **2. Stock OUT Transactions (Sales)**
 
-
 ### **Sample : Medicine Sale**
 
 ```json
@@ -61,28 +60,9 @@ This document contains ready-to-use JSON data for testing the inventory manageme
 }
 ```
 
-### **Sample 3: Food & Beverage Sale**
-
-```json
-{
-  "itemId": "TETLEY-GREENTEA-ORG-25",
-  "quantity": 15,
-  "reason": "sale",
-  "party": {
-    "name": "Organic Foods Mart",
-    "type": "customer",
-    "contact": "+91-80-2876-5432 | Neha Singh | neha@organicfoodsmart.com"
-  },
-  "unitPrice": 149,
-  "notes": "Health food store chain order",
-  "invoiceNumber": "OUT-INV-2025-10-1614"
-}
-```
-
 ---
 
 ## 📥 **3. Stock IN Transactions (Purchases)**
-
 
 ### **Sample : Healthcare Purchase**
 
@@ -102,3 +82,17 @@ This document contains ready-to-use JSON data for testing the inventory manageme
   "referenceNumber": "PO-MEDICINES-2025-10-089"
 }
 ```
+
+---
+
+## 🤖 **4. AI Forecasting & Insights Demo**
+
+### **📊 Items with Available Forecast Data**
+
+For testing the **AI-powered demand forecasting** feature, use these specific items that already have transaction history and forecast data available:
+
+#### **1. Surgical Mask**
+
+#### **2. Samsung Galaxy S24 Ultra**
+
+#### **3. Amul Gold Full Cream Milk**

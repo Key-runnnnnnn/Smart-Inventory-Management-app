@@ -7,7 +7,6 @@ import {
   Send,
   Package,
   RefreshCw,
-  Calculator,
   Search,
 } from "lucide-react";
 import { forecastAPI, inventoryAPI } from "@/lib/api";
@@ -23,13 +22,6 @@ export default function ForecastingPage() {
   const [aiResponse, setAiResponse] = useState("");
   const [aiLoading, setAiLoading] = useState(false);
   const [showNewBadge, setShowNewBadge] = useState(false);
-  const [eoqData, setEoqData] = useState({
-    annualDemand: 0,
-    orderingCost: 0,
-    holdingCost: 0,
-    result: null as any, // eslint-disable-line @typescript-eslint/no-explicit-any
-  });
-  const [showEOQ, setShowEOQ] = useState(false);
 
   useEffect(() => {
     fetchItems();
@@ -88,24 +80,6 @@ export default function ForecastingPage() {
       );
     } finally {
       setAiLoading(false);
-    }
-  };
-
-  const handleCalculateEOQ = async () => {
-    if (!selectedItem) return;
-
-    try {
-      setLoading(true);
-      const response = await forecastAPI.getEOQ(
-        selectedItem._id,
-        eoqData.annualDemand || 1000
-      );
-      setEoqData({ ...eoqData, result: response.data });
-    } catch (error: unknown) {
-      const err = error as { response?: { data?: { message?: string } } };
-      alert(err.response?.data?.message || "Failed to calculate EOQ");
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -203,7 +177,7 @@ export default function ForecastingPage() {
             </div>
 
             {selectedItem && (
-              <div className="mt-4 flex space-x-4">
+              <div className="mt-4">
                 <button
                   onClick={handleForecast}
                   disabled={loading}
@@ -212,120 +186,9 @@ export default function ForecastingPage() {
                   <Brain className="w-5 h-5 mr-2" />
                   {loading ? "Generating..." : "Generate Forecast"}
                 </button>
-                <button
-                  onClick={() => setShowEOQ(!showEOQ)}
-                  className="flex items-center px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
-                >
-                  <Calculator className="w-5 h-5 mr-2" />
-                  EOQ Calculator
-                </button>
               </div>
             )}
           </div>
-
-          {/* EOQ Calculator */}
-          {showEOQ && selectedItem && (
-            <div className="bg-white p-6 rounded-lg shadow">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-                <Calculator className="w-5 h-5 mr-2" />
-                Economic Order Quantity (EOQ)
-              </h2>
-              <div className="grid grid-cols-3 gap-4 mb-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Annual Demand
-                  </label>
-                  <input
-                    type="number"
-                    value={eoqData.annualDemand || ""}
-                    onChange={(e) =>
-                      setEoqData({
-                        ...eoqData,
-                        annualDemand: Number(e.target.value),
-                      })
-                    }
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg"
-                    placeholder="1000"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Ordering Cost ($)
-                  </label>
-                  <input
-                    type="number"
-                    value={eoqData.orderingCost || ""}
-                    onChange={(e) =>
-                      setEoqData({
-                        ...eoqData,
-                        orderingCost: Number(e.target.value),
-                      })
-                    }
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg"
-                    placeholder="50"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Holding Cost ($)
-                  </label>
-                  <input
-                    type="number"
-                    value={eoqData.holdingCost || ""}
-                    onChange={(e) =>
-                      setEoqData({
-                        ...eoqData,
-                        holdingCost: Number(e.target.value),
-                      })
-                    }
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg"
-                    placeholder="5"
-                  />
-                </div>
-              </div>
-              <button
-                onClick={handleCalculateEOQ}
-                disabled={loading}
-                className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50"
-              >
-                Calculate
-              </button>
-
-              {eoqData.result && (
-                <div className="mt-4 p-4 bg-purple-50 rounded-lg">
-                  <div className="grid grid-cols-2 gap-4 text-sm">
-                    <div>
-                      <p className="text-gray-600">Optimal Order Quantity</p>
-                      <p className="text-2xl font-bold text-purple-600">
-                        {eoqData.result.economicOrderQuantity}{" "}
-                        {selectedItem.unit}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-gray-600">Number of Orders/Year</p>
-                      <p className="text-2xl font-bold text-purple-600">
-                        {eoqData.result.numberOfOrdersPerYear}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-gray-600">Order Frequency</p>
-                      <p className="text-lg font-semibold text-gray-900">
-                        {eoqData.result.optimalOrderFrequency}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-gray-600">Total Annual Cost</p>
-                      <p className="text-lg font-semibold text-gray-900">
-                        {formatCurrency(
-                          eoqData.result.totalAnnualInventoryCost
-                        )}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
 
           {/* Forecast Results */}
           {forecast && (

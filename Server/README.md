@@ -35,7 +35,6 @@ A comprehensive, production-ready inventory management system with AI-powered fo
 - Demand forecasting for next 30/60/90 days
 - AI-powered restock suggestions
 - Natural language queries ("What should I restock next week?")
-- Economic Order Quantity (EOQ) calculation
 - Seasonal pattern detection
 - Confidence scoring for predictions
 
@@ -134,14 +133,14 @@ Complete API documentation is available in [`API_DOCUMENTATION_COMPLETE.md`](./A
 
 ### Quick API Overview
 
-| Module       | Endpoints             | Description                    |
-| ------------ | --------------------- | ------------------------------ |
-| Inventory    | `/api/inventory/*`    | CRUD operations, alerts, stats |
-| Transactions | `/api/transactions/*` | Stock IN/OUT, history          |
-| Analytics    | `/api/analytics/*`    | Dashboard, trends, insights    |
-| Alerts       | `/api/alerts/*`       | All alert types                |
-| Forecasting  | `/api/forecast/*`     | AI predictions, EOQ            |
-| Reports      | `/api/reports/*`      | CSV/PDF exports                |
+| Module       | Endpoints             | Description                       |
+| ------------ | --------------------- | --------------------------------- |
+| Inventory    | `/api/inventory/*`    | CRUD operations, alerts, stats    |
+| Transactions | `/api/transactions/*` | Stock IN/OUT, history             |
+| Analytics    | `/api/analytics/*`    | Dashboard, trends, insights       |
+| Alerts       | `/api/alerts/*`       | All alert types                   |
+| Forecasting  | `/api/forecast/*`     | AI predictions, batch forecasting |
+| Reports      | `/api/reports/*`      | CSV/PDF exports                   |
 
 ## 🧪 Testing the API
 

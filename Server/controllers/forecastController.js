@@ -80,32 +80,6 @@ const getBatchForecast = async (req, res) => {
   }
 };
 
-// @desc    Calculate Economic Order Quantity (EOQ)
-// @route   GET /api/forecast/eoq/:itemId
-// @access  Public
-const getEOQ = async (req, res) => {
-  try {
-    const { itemId } = req.params;
-    const { annualDemand } = req.query;
-
-    const eoq = await forecastService.calculateEOQ(
-      itemId,
-      annualDemand ? parseInt(annualDemand) : null
-    );
-
-    res.status(200).json({
-      success: true,
-      data: eoq,
-    });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: 'Error calculating EOQ',
-      error: error.message,
-    });
-  }
-};
-
 // @desc    Get historical sales data for an item
 // @route   GET /api/forecast/history/:itemId
 // @access  Public
@@ -137,6 +111,5 @@ module.exports = {
   forecastItemDemand,
   getAIRestockSuggestions,
   getBatchForecast,
-  getEOQ,
   getHistoricalData,
 };

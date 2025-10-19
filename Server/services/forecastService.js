@@ -350,66 +350,9 @@ const batchForecast = async (category = null, limit = 10) => {
   }
 };
 
-/**
- * Get optimal reorder quantity using EOQ (Economic Order Quantity) model
- */
-const calculateEOQ = async (itemId, annualDemand = null) => {
-  try {
-    const item = await InventoryItem.findById(itemId);
-    if (!item) {
-      throw new Error('Item not found');
-    }
-
-    // If annual demand not provided, calculate from historical data
-    if (!annualDemand) {
-      const historicalData = await getHistoricalSalesData(itemId, 365);
-      annualDemand = historicalData.reduce((sum, d) => sum + d.quantity, 0);
-
-      // If less than a year of data, extrapolate
-      if (historicalData.length < 365 && historicalData.length > 0) {
-        const avgDaily = annualDemand / historicalData.length;
-        annualDemand = Math.round(avgDaily * 365);
-      }
-    }
-
-    // EOQ parameters (can be customized)
-    const orderingCost = 500; // Fixed cost per order (₹)
-    const holdingCostRate = 0.2; // 20% of item cost per year
-    const holdingCost = item.costPrice * holdingCostRate;
-
-    // EOQ formula: √(2 * D * S / H)
-    // D = Annual demand, S = Ordering cost, H = Holding cost
-    const eoq = Math.sqrt((2 * annualDemand * orderingCost) / holdingCost);
-
-    // Calculate related metrics
-    const numberOfOrders = annualDemand / eoq;
-    const timeBetweenOrders = 365 / numberOfOrders;
-    const totalAnnualCost = (annualDemand / eoq) * orderingCost + (eoq / 2) * holdingCost;
-
-    return {
-      itemId: item._id,
-      itemName: item.name,
-      sku: item.sku,
-      economicOrderQuantity: Math.round(eoq),
-      annualDemand,
-      optimalOrderFrequency: `Every ${Math.round(timeBetweenOrders)} days`,
-      numberOfOrdersPerYear: Math.round(numberOfOrders),
-      totalAnnualInventoryCost: Math.round(totalAnnualCost),
-      parameters: {
-        orderingCost,
-        holdingCostRate: `${holdingCostRate * 100}%`,
-        unitCost: item.costPrice,
-      },
-    };
-  } catch (error) {
-    throw new Error(`Error calculating EOQ: ${error.message}`);
-  }
-};
-
 module.exports = {
   getHistoricalSalesData,
   forecastDemandWithGemini,
   getRestockSuggestions,
   batchForecast,
-  calculateEOQ,
 };

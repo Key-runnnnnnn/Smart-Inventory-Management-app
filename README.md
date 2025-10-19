@@ -36,7 +36,6 @@ A comprehensive, AI-powered inventory management system built with Next.js 15, N
 - Historical data analysis
 - Trend detection and seasonality analysis
 - Reorder point recommendations
-- Economic Order Quantity (EOQ) calculator
 - Natural language AI chat assistant
 
 ### 5. **Transaction Management**
@@ -243,12 +242,11 @@ Inventory-Management/
 - `GET /api/alerts/expired` - Expired alerts
 - `GET /api/alerts/overstock` - Overstock alerts
 
-### Forecasting (5 endpoints)
+### Forecasting (4 endpoints)
 
 - `POST /api/forecast/item/:itemId` - Forecast demand
 - `POST /api/forecast/ai-suggestions` - AI restock suggestions
 - `POST /api/forecast/batch` - Batch forecast
-- `GET /api/forecast/eoq/:itemId` - Calculate EOQ
 - `GET /api/forecast/historical/:itemId` - Historical data
 
 ### Reports (5 endpoints)

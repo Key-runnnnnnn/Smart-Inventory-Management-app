@@ -20,7 +20,7 @@ interface MonthlyReport {
     startDate: string;
     endDate: string;
   };
-  summary: Record<string, unknown>;
+  summary?: Record<string, unknown>;
   sales: {
     totalRevenue: number;
     transactionCount: number;
@@ -37,12 +37,16 @@ interface MonthlyReport {
   };
   currentInventoryValue: number;
   topSellingItems: Array<{
-    item: { name: string; sku: string };
+    // Backend returns flat structure
+    name?: string;
+    sku?: string;
+    // But also support nested structure for compatibility
+    item?: { name: string; sku: string };
     quantity: number;
     revenue: number;
   }>;
-  topItems: unknown[];
-  transactions: unknown[];
+  topItems?: unknown[];
+  transactions?: unknown[];
 }
 
 interface ComparisonData {
@@ -91,6 +95,16 @@ export default function ReportsPage() {
   );
   const [selectedMonth, setSelectedMonth] = useState("");
   const [comparisonMonths, setComparisonMonths] = useState(3);
+
+  // Calculate available reports dynamically
+  const availableReports = [
+    "Inventory Export (CSV)",
+    "Inventory Export (PDF)",
+    "Transaction History (CSV)",
+    "Monthly Performance Report",
+    "Sales Comparison Report",
+  ];
+  const totalReports = availableReports.length;
 
   useEffect(() => {
     // Set current month
@@ -255,7 +269,10 @@ export default function ReportsPage() {
             <TrendingUp className="w-8 h-8 text-indigo-200" />
           </div>
           <p className="text-sm text-indigo-100 mb-2">Reports Available</p>
-          <p className="text-4xl font-bold">5+</p>
+          <p className="text-4xl font-bold">{totalReports}</p>
+          <p className="text-xs text-indigo-200 mt-2">
+            Export & Analysis Reports
+          </p>
         </div>
       </div>
 
@@ -406,27 +423,36 @@ export default function ReportsPage() {
                         {monthlyReport.topSellingItems.map(
                           (
                             item: {
-                              item: { name: string; sku: string };
+                              item?: { name: string; sku: string };
+                              name?: string;
+                              sku?: string;
                               quantity: number;
                               revenue: number;
                             },
                             index: number
-                          ) => (
-                            <tr key={index}>
-                              <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                                {item.item.name}
-                              </td>
-                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                {item.item.sku}
-                              </td>
-                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                {item.quantity}
-                              </td>
-                              <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-green-600">
-                                {formatCurrency(item.revenue)}
-                              </td>
-                            </tr>
-                          )
+                          ) => {
+                            // Handle both flat and nested structure
+                            const itemName =
+                              item.item?.name || item.name || "Unknown";
+                            const itemSku = item.item?.sku || item.sku || "N/A";
+
+                            return (
+                              <tr key={index}>
+                                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                                  {itemName}
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                  {itemSku}
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                  {item.quantity}
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-green-600">
+                                  {formatCurrency(item.revenue)}
+                                </td>
+                              </tr>
+                            );
+                          }
                         )}
                       </tbody>
                     </table>

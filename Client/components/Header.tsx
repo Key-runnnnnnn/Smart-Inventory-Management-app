@@ -2,10 +2,12 @@
 
 import { Bell, Search, User } from "lucide-react";
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { alertsAPI } from "@/lib/api";
 
 export default function Header() {
   const [alertCount, setAlertCount] = useState(0);
+  const router = useRouter();
 
   useEffect(() => {
     fetchAlertSummary();
@@ -39,7 +41,11 @@ export default function Header() {
         {/* Right section */}
         <div className="flex items-center gap-4 ml-4">
           {/* Notifications */}
-          <button className="relative p-2 text-gray-600 hover:bg-gray-100 rounded-lg">
+          <button
+            onClick={() => router.push("/alerts")}
+            className="relative p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+            title="View Alerts"
+          >
             <Bell className="w-6 h-6" />
             {alertCount > 0 && (
               <span className="absolute top-1 right-1 w-5 h-5 bg-red-500 text-white text-xs font-bold rounded-full flex items-center justify-center">
@@ -54,7 +60,7 @@ export default function Header() {
               <User className="w-5 h-5" />
             </div>
             <span className="text-sm font-medium text-gray-700 hidden sm:block">
-              Admin User
+              Admin
             </span>
           </button>
         </div>

@@ -5,7 +5,6 @@ const {
   exportInventoryPDF,
   exportTransactionsCSV,
   getMonthlyReport,
-  getSalesComparison,
 } = require('../controllers/reportController');
 
 // Export routes
@@ -15,6 +14,5 @@ router.get('/export/transactions/csv', exportTransactionsCSV);
 
 // Report routes
 router.get('/monthly', getMonthlyReport);
-router.get('/sales-comparison', getSalesComparison);
 
 module.exports = router;

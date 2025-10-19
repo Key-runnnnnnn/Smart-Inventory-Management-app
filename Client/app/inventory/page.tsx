@@ -20,6 +20,10 @@ export default function InventoryPage() {
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [stockModalType, setStockModalType] = useState<"in" | "out">("in");
   const [selectedItem, setSelectedItem] = useState<InventoryItem | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalItems, setTotalItems] = useState(0);
+  const itemsPerPage = 10;
   const [stats, setStats] = useState({
     total: 0,
     inStock: 0,
@@ -42,17 +46,27 @@ export default function InventoryPage() {
     fetchItems();
     fetchStats();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchTerm, selectedCategory]);
+  }, [searchTerm, selectedCategory, currentPage]);
 
   const fetchItems = async () => {
     try {
       setLoading(true);
-      const params: Record<string, string> = {};
+      const params: Record<string, string> = {
+        page: currentPage.toString(),
+        limit: itemsPerPage.toString(),
+      };
       if (searchTerm) params.search = searchTerm;
       if (selectedCategory) params.category = selectedCategory;
 
       const response = await inventoryAPI.getAll(params);
-      setItems(response.data.items || response.data);
+
+      // The axios interceptor returns response.data, which has this structure:
+      // { success: true, count: 10, total: 20, page: 1, pages: 2, data: [...] }
+      const responseData = response as any;
+
+      setItems(responseData.data || []);
+      setTotalPages(responseData.pages || 1);
+      setTotalItems(responseData.total || 0);
     } catch (error) {
       console.error("Failed to fetch items:", error);
     } finally {
@@ -338,13 +352,90 @@ export default function InventoryPage() {
           <div className="text-gray-500">Loading...</div>
         </div>
       ) : (
-        <InventoryTable
-          items={items}
-          onEdit={handleEditItem}
-          onView={handleViewItem}
-          onStockIn={handleStockIn}
-          onStockOut={handleStockOut}
-        />
+        <>
+          <InventoryTable
+            items={items}
+            onEdit={handleEditItem}
+            onView={handleViewItem}
+            onStockIn={handleStockIn}
+            onStockOut={handleStockOut}
+          />
+
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div className="bg-white p-4 rounded-lg shadow mt-4">
+              <div className="flex items-center justify-between">
+                <div className="text-sm text-gray-700">
+                  Showing{" "}
+                  <span className="font-medium">
+                    {(currentPage - 1) * itemsPerPage + 1}
+                  </span>{" "}
+                  to{" "}
+                  <span className="font-medium">
+                    {Math.min(currentPage * itemsPerPage, totalItems)}
+                  </span>{" "}
+                  of <span className="font-medium">{totalItems}</span> results
+                </div>
+                <div className="flex items-center space-x-2">
+                  <button
+                    onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                    disabled={currentPage === 1}
+                    className="px-3 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    Previous
+                  </button>
+
+                  <div className="flex items-center space-x-1">
+                    {[...Array(totalPages)].map((_, idx) => {
+                      const pageNum = idx + 1;
+                      // Show first page, last page, current page, and pages around current
+                      if (
+                        pageNum === 1 ||
+                        pageNum === totalPages ||
+                        (pageNum >= currentPage - 1 &&
+                          pageNum <= currentPage + 1)
+                      ) {
+                        return (
+                          <button
+                            key={pageNum}
+                            onClick={() => setCurrentPage(pageNum)}
+                            className={`px-3 py-2 border rounded-md text-sm font-medium ${
+                              currentPage === pageNum
+                                ? "bg-indigo-600 text-white border-indigo-600"
+                                : "border-gray-300 text-gray-700 bg-white hover:bg-gray-50"
+                            }`}
+                          >
+                            {pageNum}
+                          </button>
+                        );
+                      } else if (
+                        pageNum === currentPage - 2 ||
+                        pageNum === currentPage + 2
+                      ) {
+                        return (
+                          <span key={pageNum} className="px-2 text-gray-500">
+                            ...
+                          </span>
+                        );
+                      }
+                      return null;
+                    })}
+                  </div>
+
+                  <button
+                    onClick={() =>
+                      setCurrentPage(Math.min(totalPages, currentPage + 1))
+                    }
+                    disabled={currentPage === totalPages}
+                    className="px-3 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    Next
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+        </>
       )}
 
       {/* Modals */}

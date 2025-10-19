@@ -37,7 +37,8 @@ export default function ForecastingPage() {
 
   const fetchItems = async () => {
     try {
-      const response = await inventoryAPI.getAll({});
+      // Fetch all items without pagination limit
+      const response = await inventoryAPI.getAll({ limit: 1000 });
       setItems(response.data.items || response.data);
     } catch (error) {
       console.error("Failed to fetch items:", error);

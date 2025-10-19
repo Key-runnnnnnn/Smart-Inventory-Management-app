@@ -49,52 +49,12 @@ interface MonthlyReport {
   transactions?: unknown[];
 }
 
-interface ComparisonData {
-  currentPeriod: {
-    totalTransactions: number;
-    totalValue: number;
-    stockIn: number;
-    stockOut: number;
-    startDate: string;
-    endDate: string;
-    totalRevenue: number;
-    totalQuantity: number;
-    transactionCount: number;
-  };
-  comparisonPeriod: {
-    totalTransactions: number;
-    totalValue: number;
-    stockIn: number;
-    stockOut: number;
-    startDate: string;
-    endDate: string;
-    totalRevenue: number;
-    totalQuantity: number;
-    transactionCount: number;
-  };
-  changes: {
-    transactions: { value: number; percentage: number };
-    value: { value: number; percentage: number };
-    stockIn: { value: number; percentage: number };
-    stockOut: { value: number; percentage: number };
-    revenueChange: string;
-    revenueChangeDelta: number;
-    quantityChange: string;
-    quantityChangeDelta: number;
-  };
-}
-
 export default function ReportsPage() {
   const [monthlyLoading, setMonthlyLoading] = useState(false);
-  const [comparisonLoading, setComparisonLoading] = useState(false);
   const [monthlyReport, setMonthlyReport] = useState<MonthlyReport | null>(
     null
   );
-  const [comparisonData, setComparisonData] = useState<ComparisonData | null>(
-    null
-  );
   const [selectedMonth, setSelectedMonth] = useState("");
-  const [comparisonMonths, setComparisonMonths] = useState(3);
 
   // Calculate available reports dynamically
   const availableReports = [
@@ -102,7 +62,6 @@ export default function ReportsPage() {
     "Inventory Export (PDF)",
     "Transaction History (CSV)",
     "Monthly Performance Report",
-    "Sales Comparison Report",
   ];
   const totalReports = availableReports.length;
 
@@ -133,56 +92,6 @@ export default function ReportsPage() {
       alert(err.response?.data?.message || "Failed to generate report");
     } finally {
       setMonthlyLoading(false);
-    }
-  };
-
-  const handleGenerateComparison = async (e?: React.MouseEvent) => {
-    console.log("handleGenerateComparison called"); // Debug
-
-    if (e) {
-      e.preventDefault();
-      e.stopPropagation();
-    }
-
-    try {
-      setComparisonLoading(true);
-      console.log("Comparison loading set to true"); // Debug
-
-      // Calculate date ranges for comparison
-      const now = new Date();
-      const endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0); // Last day of current month
-      const startDate = new Date(now.getFullYear(), now.getMonth(), 1); // First day of current month
-
-      // Compare with previous period
-      const compareEndDate = new Date(startDate);
-      compareEndDate.setDate(compareEndDate.getDate() - 1); // Last day of previous month
-      const compareStartDate = new Date(compareEndDate);
-      compareStartDate.setMonth(
-        compareStartDate.getMonth() - (comparisonMonths - 1)
-      );
-      compareStartDate.setDate(1); // First day of comparison period
-
-      const params = {
-        startDate: startDate.toISOString().split("T")[0],
-        endDate: endDate.toISOString().split("T")[0],
-        compareStartDate: compareStartDate.toISOString().split("T")[0],
-        compareEndDate: compareEndDate.toISOString().split("T")[0],
-      };
-
-      console.log("Sales comparison params:", params); // Debug log
-
-      const response = await reportsAPI.getSalesComparison(params);
-      console.log("Sales comparison response:", response); // Debug
-
-      setComparisonData(response.data);
-      console.log("Comparison data set:", response.data); // Debug
-    } catch (error: unknown) {
-      const err = error as { response?: { data?: { message?: string } } };
-      console.error("Sales comparison error:", error);
-      alert(err.response?.data?.message || "Failed to generate comparison");
-    } finally {
-      setComparisonLoading(false);
-      console.log("Comparison loading set to false"); // Debug
     }
   };
 
@@ -459,165 +368,6 @@ export default function ReportsPage() {
                   </div>
                 </div>
               )}
-          </div>
-        )}
-      </div>
-
-      {/* Sales Comparison */}
-      <div className="bg-white p-6 rounded-lg shadow">
-        <h2 className="text-xl font-semibold text-gray-900 mb-4 flex items-center">
-          <TrendingUp className="w-6 h-6 mr-2 text-indigo-600" />
-          Sales Comparison
-        </h2>
-
-        <div className="flex items-end space-x-4 mb-6">
-          <div className="flex-1">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Compare Last N Months
-            </label>
-            <select
-              value={comparisonMonths}
-              onChange={(e) => setComparisonMonths(Number(e.target.value))}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
-            >
-              <option value={3}>Last 3 Months</option>
-              <option value={6}>Last 6 Months</option>
-              <option value={12}>Last 12 Months</option>
-            </select>
-          </div>
-          <button
-            type="button"
-            onClick={handleGenerateComparison}
-            disabled={comparisonLoading}
-            className="px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50"
-          >
-            {comparisonLoading ? "Loading..." : "Generate Comparison"}
-          </button>
-        </div>
-
-        {comparisonData && (
-          <div className="mt-6 space-y-6">
-            {/* Current Period vs Comparison Period */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Current Period */}
-              <div className="bg-gradient-to-br from-indigo-500 to-purple-600 p-6 rounded-lg text-white">
-                <h4 className="text-lg font-semibold mb-4">Current Period</h4>
-                <p className="text-sm text-indigo-100 mb-4">
-                  {comparisonData.currentPeriod?.startDate} to{" "}
-                  {comparisonData.currentPeriod?.endDate}
-                </p>
-                <div className="space-y-3">
-                  <div className="flex justify-between items-center">
-                    <span className="text-indigo-100">Total Revenue:</span>
-                    <span className="text-2xl font-bold">
-                      {formatCurrency(
-                        comparisonData.currentPeriod?.totalRevenue || 0
-                      )}
-                    </span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-indigo-100">Total Quantity:</span>
-                    <span className="text-xl font-semibold">
-                      {comparisonData.currentPeriod?.totalQuantity || 0}
-                    </span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-indigo-100">Transactions:</span>
-                    <span className="text-xl font-semibold">
-                      {comparisonData.currentPeriod?.transactionCount || 0}
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Comparison Period */}
-              <div className="bg-gradient-to-br from-gray-500 to-gray-700 p-6 rounded-lg text-white">
-                <h4 className="text-lg font-semibold mb-4">
-                  Comparison Period
-                </h4>
-                <p className="text-sm text-gray-300 mb-4">
-                  {comparisonData.comparisonPeriod?.startDate} to{" "}
-                  {comparisonData.comparisonPeriod?.endDate}
-                </p>
-                <div className="space-y-3">
-                  <div className="flex justify-between items-center">
-                    <span className="text-gray-200">Total Revenue:</span>
-                    <span className="text-2xl font-bold">
-                      {formatCurrency(
-                        comparisonData.comparisonPeriod?.totalRevenue || 0
-                      )}
-                    </span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-gray-200">Total Quantity:</span>
-                    <span className="text-xl font-semibold">
-                      {comparisonData.comparisonPeriod?.totalQuantity || 0}
-                    </span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-gray-200">Transactions:</span>
-                    <span className="text-xl font-semibold">
-                      {comparisonData.comparisonPeriod?.transactionCount || 0}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Changes/Comparison */}
-            {comparisonData.changes && (
-              <div className="bg-white p-6 rounded-lg border-2 border-indigo-200">
-                <h4 className="text-xl font-semibold text-gray-900 mb-4 flex items-center">
-                  <TrendingUp className="w-6 h-6 mr-2 text-indigo-600" />
-                  Performance Changes
-                </h4>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="bg-green-50 p-4 rounded-lg">
-                    <p className="text-sm text-gray-600 mb-1">Revenue Change</p>
-                    <p
-                      className={`text-3xl font-bold ${
-                        comparisonData.changes.revenueChangeDelta >= 0
-                          ? "text-green-600"
-                          : "text-red-600"
-                      }`}
-                    >
-                      {comparisonData.changes.revenueChange}
-                    </p>
-                    <p className="text-sm text-gray-500 mt-1">
-                      {comparisonData.changes.revenueChangeDelta >= 0
-                        ? "↑"
-                        : "↓"}{" "}
-                      {formatCurrency(
-                        Math.abs(comparisonData.changes.revenueChangeDelta || 0)
-                      )}
-                    </p>
-                  </div>
-                  <div className="bg-blue-50 p-4 rounded-lg">
-                    <p className="text-sm text-gray-600 mb-1">
-                      Quantity Change
-                    </p>
-                    <p
-                      className={`text-3xl font-bold ${
-                        comparisonData.changes.quantityChangeDelta >= 0
-                          ? "text-green-600"
-                          : "text-red-600"
-                      }`}
-                    >
-                      {comparisonData.changes.quantityChange}
-                    </p>
-                    <p className="text-sm text-gray-500 mt-1">
-                      {comparisonData.changes.quantityChangeDelta >= 0
-                        ? "↑"
-                        : "↓"}{" "}
-                      {Math.abs(
-                        comparisonData.changes.quantityChangeDelta || 0
-                      )}{" "}
-                      units
-                    </p>
-                  </div>
-                </div>
-              </div>
-            )}
           </div>
         )}
       </div>

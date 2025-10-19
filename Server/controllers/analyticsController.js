@@ -253,6 +253,7 @@ const getSlowMovingItems = async (req, res) => {
           _id: '$itemId',
           totalQuantitySold: { $sum: '$quantity' },
           lastSaleDate: { $max: '$transactionDate' },
+          transactionCount: { $sum: 1 },
         },
       },
     ]);
@@ -288,6 +289,7 @@ const getSlowMovingItems = async (req, res) => {
           unit: item.unit || 'pcs',
           stockValue: item.stockValue,
           totalQuantitySold: salesData?.totalQuantitySold || 0,
+          transactionCount: salesData?.transactionCount || 0,
           lastSaleDate: salesData?.lastSaleDate || null,
           daysSinceLastSale,
           daysSinceLastTransaction: daysSinceLastSale,
@@ -297,22 +299,28 @@ const getSlowMovingItems = async (req, res) => {
       })
       .filter((item) => {
         // Item is slow-moving if:
-        // 1. No sales at all in the period AND item has been added for more than 30 days, OR
-        // 2. Very low sales (less than 5 units total in the period) AND low turnover (less than 5% of stock), OR
-        // 3. No sales for more than 45 days (even if had sales before)
+        // 1. No sales at all in the period, OR
+        // 2. Very low sales (less than 10 units total AND less than 3 transactions), OR
+        // 3. Low turnover (sold less than 10% of current stock in the period)
 
         const hasNoSales = item.totalQuantitySold === 0;
-        const hasVeryLowSales = item.totalQuantitySold > 0 && item.totalQuantitySold < 5;
-        const hasLowTurnover = item.quantity > 0 && item.totalQuantitySold < item.quantity * 0.05;
-        const noRecentSales = item.daysSinceLastSale && item.daysSinceLastSale > 45;
+        const hasVeryLowSales = item.totalQuantitySold > 0 && item.totalQuantitySold < 10 && item.transactionCount < 3;
+        const hasLowTurnover = item.quantity > 0 && item.totalQuantitySold < item.quantity * 0.1;
 
-        return (
-          (hasNoSales && item.daysSinceAdded > 30) ||
-          (hasVeryLowSales && hasLowTurnover) ||
-          noRecentSales
-        );
+        return hasNoSales || hasVeryLowSales || hasLowTurnover;
       })
-      .sort((a, b) => b.stockValue - a.stockValue)
+      .sort((a, b) => {
+        // Sort by: 
+        // 1. Items with no sales first
+        // 2. Then by lowest transaction count
+        // 3. Then by highest stock value (most capital tied up)
+        if (a.totalQuantitySold === 0 && b.totalQuantitySold > 0) return -1;
+        if (a.totalQuantitySold > 0 && b.totalQuantitySold === 0) return 1;
+        if (a.transactionCount !== b.transactionCount) {
+          return a.transactionCount - b.transactionCount;
+        }
+        return b.stockValue - a.stockValue;
+      })
       .slice(0, parseInt(limit));
 
     res.status(200).json({

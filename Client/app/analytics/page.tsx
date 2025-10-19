@@ -82,33 +82,18 @@ export default function AnalyticsPage() {
         }),
       ]);
 
-      console.log("Analytics Data:", {
-        dashboard: dashboardRes.data,
-        topItems: topItemsRes.data,
-        slowMoving: slowMovingRes.data,
-        salesTrends: salesTrendsRes.data,
-        valueTrends: valueTrendsRes.data,
-        turnover: turnoverRes.data,
-      });
-
-      console.log("Setting state:");
-      console.log(
-        "- Dashboard categoryDistribution:",
-        dashboardRes.data?.categoryDistribution
-      );
-      console.log("- Top items array:", topItemsRes.data?.items);
-      console.log("- Slow moving array:", slowMovingRes.data);
-      console.log("- Sales trends array:", salesTrendsRes.data?.trends);
-      console.log("- Value trends array:", valueTrendsRes.data?.trends);
+      // Axios interceptor unwraps response, so we access properties directly
+      const responseData = slowMovingRes as any;
+      const slowMovingArray = Array.isArray(responseData.data)
+        ? responseData.data
+        : responseData.data?.data || [];
 
       setDashboard(dashboardRes.data);
       setTopItems(topItemsRes.data?.items || []);
-      setSlowMoving(slowMovingRes.data || []);
+      setSlowMoving(slowMovingArray);
       setSalesTrends(salesTrendsRes.data?.trends || []);
       setValueTrends(valueTrendsRes.data?.trends || []);
       setTurnoverData(turnoverRes.data || null);
-
-      console.log("State set complete");
     } catch (error) {
       console.error("Failed to fetch analytics:", error);
     } finally {

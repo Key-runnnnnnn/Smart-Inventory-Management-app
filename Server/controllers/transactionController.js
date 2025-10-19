@@ -3,9 +3,7 @@ const InventoryItem = require('../models/InventoryItem');
 const mongoose = require('mongoose');
 const { emitStockTransaction, emitInventoryUpdate, emitLowStockAlert } = require('../sockets/inventorySocket');
 
-// @desc    Get all transactions
-// @route   GET /api/transactions
-// @access  Public
+
 const getAllTransactions = async (req, res) => {
   try {
     const {
@@ -59,9 +57,7 @@ const getAllTransactions = async (req, res) => {
   }
 };
 
-// @desc    Get transactions for a specific item
-// @route   GET /api/transactions/item/:itemId
-// @access  Public
+
 const getItemTransactions = async (req, res) => {
   try {
     const transactions = await StockTransaction.find({
@@ -84,9 +80,7 @@ const getItemTransactions = async (req, res) => {
   }
 };
 
-// @desc    Create stock IN transaction
-// @route   POST /api/transactions/stock-in
-// @access  Public
+
 const stockIn = async (req, res) => {
   const session = await mongoose.startSession();
   session.startTransaction();
@@ -153,9 +147,7 @@ const stockIn = async (req, res) => {
   }
 };
 
-// @desc    Create stock OUT transaction
-// @route   POST /api/transactions/stock-out
-// @access  Public
+
 const stockOut = async (req, res) => {
   const session = await mongoose.startSession();
   session.startTransaction();
@@ -235,9 +227,7 @@ const stockOut = async (req, res) => {
   }
 };
 
-// @desc    Stock adjustment (manual correction)
-// @route   POST /api/transactions/adjustment
-// @access  Public
+
 const stockAdjustment = async (req, res) => {
   const session = await mongoose.startSession();
   session.startTransaction();
@@ -295,9 +285,6 @@ const stockAdjustment = async (req, res) => {
   }
 };
 
-// @desc    Get transaction statistics
-// @route   GET /api/transactions/stats/summary
-// @access  Public
 const getTransactionStats = async (req, res) => {
   try {
     const { startDate, endDate } = req.query;

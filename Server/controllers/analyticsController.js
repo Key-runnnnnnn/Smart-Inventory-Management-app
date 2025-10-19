@@ -1,9 +1,7 @@
 const InventoryItem = require('../models/InventoryItem');
 const StockTransaction = require('../models/StockTransaction');
 
-// @desc    Get comprehensive dashboard analytics
-// @route   GET /api/analytics/dashboard
-// @access  Public
+
 const getDashboardAnalytics = async (req, res) => {
   try {
     // Total stock value
@@ -105,9 +103,7 @@ const getDashboardAnalytics = async (req, res) => {
   }
 };
 
-// @desc    Get top performing items
-// @route   GET /api/analytics/top-items
-// @access  Public
+
 const getTopPerformingItems = async (req, res) => {
   try {
     const { limit = 5, metric = 'sales', days = 30 } = req.query;
@@ -225,9 +221,7 @@ const getTopPerformingItems = async (req, res) => {
   }
 };
 
-// @desc    Get slow-moving inventory
-// @route   GET /api/analytics/slow-moving
-// @access  Public
+
 const getSlowMovingItems = async (req, res) => {
   try {
     const { days = 60, limit = 10 } = req.query;
@@ -338,9 +332,7 @@ const getSlowMovingItems = async (req, res) => {
   }
 };
 
-// @desc    Get inventory turnover rate
-// @route   GET /api/analytics/turnover
-// @access  Public
+
 const getInventoryTurnover = async (req, res) => {
   try {
     const { days = 30 } = req.query;
@@ -438,9 +430,7 @@ const getInventoryTurnover = async (req, res) => {
   }
 };
 
-// @desc    Get sales trends over time
-// @route   GET /api/analytics/sales-trends
-// @access  Public
+
 const getSalesTrends = async (req, res) => {
   try {
     const { days = 30, groupBy = 'day' } = req.query;
@@ -538,9 +528,7 @@ const getSalesTrends = async (req, res) => {
   }
 };
 
-// @desc    Get inventory value trends
-// @route   GET /api/analytics/value-trends
-// @access  Public
+
 const getInventoryValueTrends = async (req, res) => {
   try {
     // Current value by category

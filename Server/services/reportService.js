@@ -248,94 +248,9 @@ const generateMonthlyReport = async (year, month) => {
   }
 };
 
-/**
- * Generate sales comparison report
- */
-const generateSalesComparison = async (startDate, endDate, compareStartDate, compareEndDate) => {
-  try {
-    // Current period sales
-    const currentSales = await StockTransaction.aggregate([
-      {
-        $match: {
-          type: 'out',
-          reason: 'sale',
-          transactionDate: { $gte: new Date(startDate), $lte: new Date(endDate) },
-        },
-      },
-      {
-        $group: {
-          _id: null,
-          totalRevenue: { $sum: '$totalAmount' },
-          totalQuantity: { $sum: '$quantity' },
-          count: { $sum: 1 },
-        },
-      },
-    ]);
-
-    // Comparison period sales
-    const compareSales = await StockTransaction.aggregate([
-      {
-        $match: {
-          type: 'out',
-          reason: 'sale',
-          transactionDate: {
-            $gte: new Date(compareStartDate),
-            $lte: new Date(compareEndDate),
-          },
-        },
-      },
-      {
-        $group: {
-          _id: null,
-          totalRevenue: { $sum: '$totalAmount' },
-          totalQuantity: { $sum: '$quantity' },
-          count: { $sum: 1 },
-        },
-      },
-    ]);
-
-    const current = currentSales[0] || { totalRevenue: 0, totalQuantity: 0, count: 0 };
-    const compare = compareSales[0] || { totalRevenue: 0, totalQuantity: 0, count: 0 };
-
-    const revenueChange = compare.totalRevenue > 0
-      ? (((current.totalRevenue - compare.totalRevenue) / compare.totalRevenue) * 100).toFixed(2)
-      : 0;
-
-    const quantityChange = compare.totalQuantity > 0
-      ? (((current.totalQuantity - compare.totalQuantity) / compare.totalQuantity) * 100).toFixed(2)
-      : 0;
-
-    return {
-      currentPeriod: {
-        startDate,
-        endDate,
-        totalRevenue: current.totalRevenue,
-        totalQuantity: current.totalQuantity,
-        transactionCount: current.count,
-      },
-      comparisonPeriod: {
-        startDate: compareStartDate,
-        endDate: compareEndDate,
-        totalRevenue: compare.totalRevenue,
-        totalQuantity: compare.totalQuantity,
-        transactionCount: compare.count,
-      },
-      changes: {
-        revenueChange: `${revenueChange}%`,
-        quantityChange: `${quantityChange}%`,
-        revenueChangeDelta: current.totalRevenue - compare.totalRevenue,
-        quantityChangeDelta: current.totalQuantity - compare.totalQuantity,
-      },
-    };
-  } catch (error) {
-    throw new Error(`Error generating sales comparison: ${error.message}`);
-  }
-};
-
 module.exports = {
   generateInventoryCSV,
   generateTransactionsCSV,
   generateInventoryPDF,
   generateMonthlyReport,
-  generateSalesComparison,
 };

@@ -110,44 +110,10 @@ const getMonthlyReport = async (req, res) => {
   }
 };
 
-// @desc    Get sales comparison report
-// @route   GET /api/reports/sales-comparison
-// @access  Public
-const getSalesComparison = async (req, res) => {
-  try {
-    const { startDate, endDate, compareStartDate, compareEndDate } = req.query;
-
-    if (!startDate || !endDate || !compareStartDate || !compareEndDate) {
-      return res.status(400).json({
-        success: false,
-        message: 'All date parameters are required',
-      });
-    }
-
-    const comparison = await reportService.generateSalesComparison(
-      startDate,
-      endDate,
-      compareStartDate,
-      compareEndDate
-    );
-
-    res.status(200).json({
-      success: true,
-      data: comparison,
-    });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: 'Error generating sales comparison',
-      error: error.message,
-    });
-  }
-};
 
 module.exports = {
   exportInventoryCSV,
   exportInventoryPDF,
   exportTransactionsCSV,
   getMonthlyReport,
-  getSalesComparison,
 };

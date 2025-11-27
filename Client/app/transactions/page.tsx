@@ -239,7 +239,7 @@ export default function TransactionsPage() {
                       : null;
 
                   return (
-                    <tr key={transaction._id} className="hover:bg-gray-50">
+                    <tr key={transaction.id} className="hover:bg-gray-50">
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                         {formatDateTime(transaction.transactionDate)}
                       </td>

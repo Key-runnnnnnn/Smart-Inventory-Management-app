@@ -94,19 +94,10 @@ export default function AnalyticsPage() {
   const categoryData =
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     dashboard?.categoryDistribution?.map((cat: any) => ({
-      name: cat._id,
+      name: cat.category || cat.id,
       value: cat.count,
       totalValue: cat.totalValue,
     })) || [];
-
-  const topItemsChartData = (topItems || []).slice(0, 10).map((item) => ({
-    name:
-      item?.name?.length > 20
-        ? item.name.substring(0, 20) + "..."
-        : item?.name || "N/A",
-    quantity: item?.quantity || 0,
-    value: item?.stockValue || 0,
-  }));
 
   // Turnover data is a single object, not an array - display as metrics
 
@@ -192,20 +183,26 @@ export default function AnalyticsPage() {
           </ResponsiveContainer>
         </div>
 
-        {/* Top Performing Items */}
+        {/* Sales Trends */}
         <div className="bg-white p-6 rounded-lg shadow">
           <h2 className="text-lg font-semibold text-gray-900 mb-4">
-            Top 10 Items by Value
+            Sales Trends (Last 30 Days)
           </h2>
           <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={topItemsChartData}>
+            <LineChart data={salesTrends}>
               <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="name" angle={-45} textAnchor="end" height={100} />
+              <XAxis dataKey="date" />
               <YAxis />
-              <Tooltip formatter={(value) => formatCurrency(Number(value))} />
+              <Tooltip />
               <Legend />
-              <Bar dataKey="value" fill="#6366f1" name="Stock Value" />
-            </BarChart>
+              <Line
+                type="monotone"
+                dataKey="quantity"
+                stroke="#6366f1"
+                strokeWidth={2}
+                name="Quantity Sold"
+              />
+            </LineChart>
           </ResponsiveContainer>
         </div>
       </div>
@@ -237,7 +234,7 @@ export default function AnalyticsPage() {
               <tbody className="bg-white divide-y divide-gray-200">
                 {topItems && topItems.length > 0 ? (
                   topItems.slice(0, 5).map((item) => (
-                    <tr key={item._id}>
+                    <tr key={item.id || item.itemId}>
                       <td className="px-6 py-4">
                         <div className="text-sm font-medium text-gray-900">
                           {item.name}
@@ -292,7 +289,7 @@ export default function AnalyticsPage() {
               <tbody className="bg-white divide-y divide-gray-200">
                 {slowMoving && slowMoving.length > 0 ? (
                   slowMoving.slice(0, 5).map((item) => (
-                    <tr key={item._id}>
+                    <tr key={item.id}>
                       <td className="px-6 py-4">
                         <div className="text-sm font-medium text-gray-900">
                           {item.name}

@@ -52,7 +52,7 @@ export default function Sidebar() {
           <div className="flex items-center gap-2 px-6 py-6 border-b border-gray-200">
             <Package className="w-8 h-8 text-blue-600" />
             <div>
-              <h1 className="text-xl font-bold text-gray-900">InventoryPro</h1>
+              <h1 className="text-xl font-bold text-gray-900">StockSense AI</h1>
               <p className="text-xs text-gray-500">Smart Management</p>
             </div>
           </div>
@@ -79,14 +79,6 @@ export default function Sidebar() {
               );
             })}
           </nav>
-
-          {/* Footer */}
-          <div className="p-4 border-t border-gray-200">
-            <div className="px-4 py-3 bg-gray-50 rounded-lg">
-              <p className="text-xs font-medium text-gray-900">Need Help?</p>
-              <p className="text-xs text-gray-500 mt-1">Check documentation</p>
-            </div>
-          </div>
         </div>
       </aside>
 

@@ -1,6 +1,6 @@
-# InventoryPro - Smart Inventory Management System
+# StockSense AI - Smart Inventory Management System
 
-A comprehensive, AI-powered inventory management system built with Next.js 15, Node.js, MongoDB, and Google Gemini AI.
+A comprehensive, AI-powered inventory management system built with Next.js 15, Flask (Python), MongoDB, and Google Gemini 2.0 Flash AI.
 
 ## 🚀 Features
 
@@ -72,58 +72,63 @@ A comprehensive, AI-powered inventory management system built with Next.js 15, N
 
 ### Backend
 
-- **Runtime**: Node.js
-- **Framework**: Express.js 5.1.0
-- **Database**: MongoDB with Mongoose 8.19.1
-- **AI/ML**: Google Generative AI (Gemini Pro)
-- **Real-time**: Socket.io
-- **Export**: json2csv, PDFKit
-- **Environment**: dotenv 17.2.3
+- **Language**: Python 3.11+
+- **Framework**: Flask 3.0.0
+- **Database**: MongoDB with PyMongo 4.6.1
+- **AI/ML**: Google Generative AI (Gemini 2.0 Flash Experimental)
+- **Real-time**: Flask-SocketIO 5.3.5
+- **Export**: ReportLab 4.0.7
+- **Environment**: python-dotenv 1.0.0
 
 ## 📦 Installation
 
 ### Prerequisites
 
-- Node.js (v18 or higher)
+- Python 3.11 or higher
 - MongoDB Atlas account or local MongoDB
-- Google Gemini API key
+- Google Gemini API key (from https://aistudio.google.com/apikey)
+- Node.js (v18 or higher) for frontend only
 
 ### Backend Setup
 
-1. Navigate to the Server directory:
+1. Navigate to the backend directory:
 
 ```bash
-cd Server
+cd backend
 ```
 
-2. Install dependencies:
+2. Create a virtual environment:
 
 ```bash
-npm install
+python -m venv venv
+
+# Activate on Windows:
+venv\Scripts\activate
+
+# Activate on Linux/Mac:
+source venv/bin/activate
 ```
 
-3. Create a `.env` file:
+3. Install dependencies:
+
+```bash
+pip install -r requirements.txt
+```
+
+4. Create a `.env` file:
 
 ```env
 PORT=5000
 MONGODB_URI=your_mongodb_connection_string
 GEMINI_API_KEY=your_gemini_api_key
 CLIENT_URL=http://localhost:3000
-NODE_ENV=development
+SECRET_KEY=your_secret_key_here
 ```
 
-4. Seed the database (optional):
+5. Start the Flask server:
 
 ```bash
-node scripts/seed.js
-```
-
-5. Start the server:
-
-```bash
-npm start
-# or for development with nodemon
-npm run dev
+python app.py
 ```
 
 ### Frontend Setup
@@ -158,7 +163,7 @@ npm run dev
 ## 📁 Project Structure
 
 ```
-Inventory-Management/
+Smart-Inventory-Management-app/
 ├── Client/                      # Next.js Frontend
 │   ├── app/                     # App Router pages
 │   │   ├── page.tsx            # Dashboard
@@ -166,7 +171,7 @@ Inventory-Management/
 │   │   ├── transactions/       # Transaction history
 │   │   ├── analytics/          # Analytics & charts
 │   │   ├── alerts/             # Alert center
-│   │   ├── forecasting/        # AI forecasting
+│   │   ├── forecasting/        # AI forecasting (with modal)
 │   │   └── reports/            # Reports & exports
 │   ├── components/             # React components
 │   │   ├── Header.tsx
@@ -178,28 +183,27 @@ Inventory-Management/
 │   │   └── utils.ts            # Helper functions
 │   └── types/                  # TypeScript types
 │
-└── Server/                      # Node.js Backend
-    ├── controllers/             # Request handlers
-    │   ├── inventoryController.js
-    │   ├── transactionController.js
-    │   ├── analyticsController.js
-    │   ├── alertController.js
-    │   ├── forecastController.js
-    │   └── reportController.js
-    ├── models/                  # MongoDB schemas
-    │   ├── InventoryItem.js
-    │   └── StockTransaction.js
-    ├── routes/                  # API routes
-    ├── services/                # Business logic
-    │   ├── alertService.js
-    │   ├── forecastService.js
-    │   └── reportService.js
-    ├── sockets/                 # WebSocket handlers
-    │   └── inventorySocket.js
+└── backend/                     # Flask Backend (Python)
+    ├── app.py                   # Main application entry
+    ├── requirements.txt         # Python dependencies
     ├── config/                  # Configuration
-    │   └── database.js
-    └── scripts/                 # Utility scripts
-        └── seed.js              # Database seeder
+    │   └── database.py          # MongoDB connection
+    ├── models/                  # MongoDB models
+    │   ├── inventory_item.py    # InventoryItem model
+    │   └── stock_transaction.py # StockTransaction model
+    ├── routes/                  # API routes (Blueprints)
+    │   ├── inventory_routes.py
+    │   ├── transaction_routes.py
+    │   ├── analytics_routes.py
+    │   ├── alert_routes.py
+    │   ├── forecast_routes.py
+    │   └── report_routes.py
+    ├── services/                # Business logic
+    │   ├── alert_service.py
+    │   ├── forecast_service.py  # AI forecasting with fallback
+    │   └── report_service.py
+    └── sockets/                 # WebSocket handlers
+        └── inventory_socket.py
 ```
 
 ## 🔌 API Endpoints
@@ -222,7 +226,7 @@ Inventory-Management/
 - `POST /api/transactions/stock-in` - Add stock
 - `POST /api/transactions/stock-out` - Remove stock
 - `POST /api/transactions/adjustment` - Adjust stock
-- `GET /api/transactions/stats` - Get transaction stats
+- `GET /api/transactions/stats/summary` - Get transaction stats
 
 ### Analytics (6 endpoints)
 
@@ -242,12 +246,13 @@ Inventory-Management/
 - `GET /api/alerts/expired` - Expired alerts
 - `GET /api/alerts/overstock` - Overstock alerts
 
-### Forecasting (4 endpoints)
+### Forecasting (3 endpoints)
 
-- `POST /api/forecast/item/:itemId` - Forecast demand
-- `POST /api/forecast/ai-suggestions` - AI restock suggestions
-- `POST /api/forecast/batch` - Batch forecast
-- `GET /api/forecast/historical/:itemId` - Historical data
+- `POST /api/forecast/demand/:itemId` - Forecast demand with AI
+- `POST /api/forecast/restock-suggestions` - AI restock suggestions
+- `POST /api/forecast/chat` - AI chat assistant for inventory queries
+
+**Note**: AI forecasting includes fallback methods if Gemini API key is invalid or unavailable. Fallback provides statistical analysis based on historical data.
 
 ### Reports (5 endpoints)
 
@@ -268,11 +273,13 @@ Inventory-Management/
 
 ### AI Forecasting
 
-- Powered by Google Gemini Pro
+- Powered by Google Gemini 2.0 Flash Experimental
 - Analyzes historical transaction data
 - Provides demand predictions with confidence levels
 - Trend and seasonality detection
-- Natural language chat interface for restock queries
+- Natural language chat interface for inventory queries (modal window)
+- **Fallback mode**: Uses statistical analysis if Gemini API is unavailable
+- Smart restock suggestions based on consumption patterns
 
 ### Advanced Analytics
 
@@ -291,15 +298,19 @@ Inventory-Management/
 
 ## 🔐 Environment Variables
 
-### Server (.env)
+### Backend (.env)
 
 ```env
 PORT=5000
 MONGODB_URI=mongodb+srv://username:password@cluster.mongodb.net/database
 GEMINI_API_KEY=your_gemini_api_key_here
 CLIENT_URL=http://localhost:3000
-NODE_ENV=development
+SECRET_KEY=your_secret_key_here
 ```
+
+**Get Gemini API Key**: https://aistudio.google.com/apikey
+
+**Note**: The application will work without a valid Gemini API key, using statistical fallback methods for forecasting.
 
 ### Client (.env.local)
 
@@ -319,7 +330,10 @@ NEXT_PUBLIC_SOCKET_URL=http://localhost:5000
 - Supplier: supplierName, supplierContact
 - Location: location (warehouse/rack)
 - Batch: batchNumber, manufacturingDate, expiryDate
-- Status: isActive, stockStatus, expiryStatus
+- Status: isActive, stockStatus (computed), expiryStatus (computed)
+- Timestamps: createdAt, updatedAt
+
+**Note**: All MongoDB `_id` fields are converted to `id` in API responses for frontend compatibility.
 
 ### StockTransaction
 
@@ -328,18 +342,35 @@ NEXT_PUBLIC_SOCKET_URL=http://localhost:5000
 - Party: partyName, partyContact, partyType
 - Financial: unitCost, totalAmount
 - Tracking: performedBy, transactionDate, notes
+- Timestamps: createdAt
+
+**Note**: All datetime fields are serialized to ISO format strings in API responses.
 
 ## 🚦 Getting Started Guide
 
 1. **Clone the repository**
-2. **Setup MongoDB**: Create a database and get connection string
-3. **Get Gemini API Key**: Sign up at Google AI Studio
-4. **Configure environment variables** in both Client and Server
-5. **Install dependencies** for both frontend and backend
-6. **Seed the database** with sample data (optional)
-7. **Start the backend server** (port 5000)
-8. **Start the frontend dev server** (port 3000)
+2. **Setup MongoDB**: Create a MongoDB Atlas account and get connection string
+3. **Get Gemini API Key**: Sign up at https://aistudio.google.com/apikey (optional - fallback available)
+4. **Configure environment variables**:
+   - Create `backend/.env` with MongoDB URI, Gemini key, and secret key
+   - Create `Client/.env.local` with API URLs
+5. **Setup Python backend**:
+   - Create virtual environment: `python -m venv venv`
+   - Activate: `venv\Scripts\activate` (Windows) or `source venv/bin/activate` (Linux/Mac)
+   - Install: `pip install -r requirements.txt`
+6. **Setup Node.js frontend**:
+   - Navigate to Client directory
+   - Run: `npm install`
+7. **Start the backend**: `python app.py` (from backend directory)
+8. **Start the frontend**: `npm run dev` (from Client directory)
 9. **Access the application** at http://localhost:3000
+
+**Troubleshooting**:
+
+- If MongoDB connection fails, ensure dnspython==2.4.2 is installed
+- AI features work in fallback mode without Gemini API key
+- All datetime fields are in ISO format
+- API uses `id` field (not `_id`)
 
 ## 🧪 Testing the Application
 
@@ -357,29 +388,41 @@ NEXT_PUBLIC_SOCKET_URL=http://localhost:5000
 
 Full API documentation is available in:
 
-- `Server/API_DOCUMENTATION_COMPLETE.md` - Detailed endpoint documentation
-- `Server/BACKEND_SUMMARY.md` - Backend architecture overview
+- `backend/README.md` - Backend architecture overview
+- `backend/MIGRATION_SUMMARY.md` - Migration notes from Node.js to Flask
+
+### Key API Features:
+
+- RESTful design with consistent response format
+- All responses include `success`, `message`, and `data` fields
+- MongoDB `_id` automatically converted to `id`
+- DateTime objects serialized to ISO format strings
+- Error handling with appropriate HTTP status codes
+- WebSocket support for real-time updates
 
 ## 🤝 Contributing
 
 This is a complete full-stack application. Feel free to fork and customize for your needs.
 
-## 📄 License
+## 🔧 Technical Highlights
 
-This project is open source and available under the MIT License.
+- **Flask Backend**: Modern Python web framework with Blueprint architecture
+- **MongoDB Integration**: PyMongo with proper ObjectId and datetime handling
+- **AI Integration**: Google Gemini 2.0 Flash with intelligent fallback mechanisms
+- **Real-time Updates**: Flask-SocketIO for WebSocket communication
+- **Type Safety**: TypeScript frontend with proper type definitions
+- **Responsive Design**: Tailwind CSS with mobile-first approach
+- **Data Visualization**: Recharts for interactive analytics
+- **Error Handling**: Comprehensive error handling with user-friendly messages
 
-## 🙏 Acknowledgments
+## 🐛 Known Issues & Solutions
 
-- Next.js team for the amazing framework
-- MongoDB for the flexible database
-- Google for Gemini AI capabilities
-- Recharts for beautiful visualizations
-- The open-source community
-
-## 📞 Support
-
-For issues or questions, please create an issue in the repository.
+- **DNS Resolution**: Use dnspython==2.4.2 (not 2.8.0)
+- **ObjectId Serialization**: Handled automatically in model `to_dict()` methods
+- **DateTime Serialization**: All dates converted to ISO format strings
+- **Field Naming**: Backend converts `_id` to `id` for frontend compatibility
+- **CORS**: Configured to allow frontend origin (localhost:3000)
 
 ---
 
-**Built with ❤️ using Next.js, Node.js, MongoDB, and Google Gemini AI**
+**Built with ❤️ using Next.js, Flask (Python), MongoDB, and Google Gemini 2.0 Flash AI**

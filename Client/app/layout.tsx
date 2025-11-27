@@ -9,7 +9,7 @@ import Header from "@/components/Header";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "InventoryPro - Smart Inventory Management",
+  title: "StockSense AI - Smart Inventory Management",
   description:
     "AI-powered inventory management system with real-time analytics",
 };

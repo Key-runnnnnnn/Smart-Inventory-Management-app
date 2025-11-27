@@ -129,7 +129,7 @@ export default function InventoryPage() {
       };
 
       if (selectedItem) {
-        await inventoryAPI.update(selectedItem._id, transformedData);
+        await inventoryAPI.update(selectedItem.id, transformedData);
         alert("Item updated successfully!");
       } else {
         await inventoryAPI.create(transformedData);
@@ -160,7 +160,7 @@ export default function InventoryPage() {
     try {
       // Transform data to match backend expectations
       const payload: Record<string, unknown> = {
-        itemId: selectedItem._id,
+        itemId: selectedItem.id,
         quantity: Number(data.quantity) || 1,
         reason: data.reason,
         notes: data.notes || "",

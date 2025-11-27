@@ -1,319 +1,314 @@
-# 🏢 Smart Inventory Management System - Backend
+# Smart Inventory Management - Flask Backend
 
-A comprehensive, production-ready inventory management system with AI-powered forecasting, real-time updates, and advanced analytics.
+This is the Flask-based backend API for the Smart Inventory Management System. It has been converted from the original Node.js/Express implementation.
 
-## ✨ Features
+## Features
 
-### 🧾 Inventory Management
+- **RESTful API** - Complete CRUD operations for inventory management
+- **Real-time Updates** - WebSocket support using Flask-SocketIO
+- **MongoDB Integration** - Flexible NoSQL database for inventory data
+- **AI-Powered Forecasting** - Demand forecasting using Google Gemini AI
+- **Advanced Analytics** - Dashboard analytics, sales trends, inventory turnover
+- **Alert System** - Automated alerts for low stock, expiry, and overstock
+- **Report Generation** - CSV and PDF export capabilities
+- **Transaction Tracking** - Complete audit trail of all stock movements
 
-- Full CRUD operations for inventory items
-- Stock IN/OUT transaction tracking
-- Reorder level monitoring
-- Multi-warehouse support
-- Batch and expiry tracking
-- Real-time quantity updates via WebSocket
+## Technology Stack
 
-### 📊 Analytics & Insights
+- **Flask** - Web framework
+- **Flask-SocketIO** - Real-time WebSocket communication
+- **PyMongo** - MongoDB driver
+- **Google Generative AI** - AI-powered forecasting
+- **ReportLab** - PDF generation
+- **Flask-CORS** - Cross-Origin Resource Sharing
 
-- Total stock value calculation
-- Top 5 performing items (by sales/revenue)
-- Slow-moving inventory detection
-- Inventory turnover analysis
-- Category-wise distribution
-- Sales trends over time
+## Prerequisites
 
-### 🔔 Alerts & Notifications
+- Python 3.8 or higher
+- MongoDB (local or cloud instance)
+- Google Gemini API key (for AI forecasting features)
 
-- Low stock alerts (configurable thresholds)
-- Near-expiry notifications
-- Expired items tracking
-- Overstock warnings
-- Real-time alert broadcasting via WebSocket
-
-### 🤖 AI/Forecasting (Powered by Google Gemini)
-
-- Demand forecasting for next 30/60/90 days
-- AI-powered restock suggestions
-- Natural language queries ("What should I restock next week?")
-- Seasonal pattern detection
-- Confidence scoring for predictions
-
-### 🧰 Reporting
-
-- CSV export (inventory & transactions)
-- PDF report generation
-- Monthly performance reports
-- Sales comparison reports
-- Visual trend analysis data
-
-### 🔌 Real-Time Updates
-
-- WebSocket integration (Socket.io)
-- Live inventory updates
-- Real-time transaction notifications
-- Alert broadcasting
-
-## 🛠️ Tech Stack
-
-- **Runtime**: Node.js
-- **Framework**: Express.js
-- **Database**: MongoDB with Mongoose
-- **AI/ML**: Google Generative AI (Gemini Pro)
-- **Real-time**: Socket.io
-- **CSV**: json2csv
-- **PDF**: PDFKit
-- **Environment**: dotenv
-
-## 📦 Installation
-
-### Prerequisites
-
-- Node.js (v14 or higher)
-- MongoDB Atlas account or local MongoDB
-- Google Gemini API key ([Get one here](https://makersuite.google.com/app/apikey))
-
-### Steps
+## Installation
 
 1. **Clone the repository**
 
+   ```bash
+   cd backend
+   ```
+
+2. **Create a virtual environment**
+
+   ```bash
+   python -m venv venv
+   ```
+
+3. **Activate the virtual environment**
+
+   - Windows:
+     ```bash
+     venv\Scripts\activate
+     ```
+   - Linux/Mac:
+     ```bash
+     source venv/bin/activate
+     ```
+
+4. **Install dependencies**
+
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+5. **Set up environment variables**
+   - Copy `.env.example` to `.env`
+   ```bash
+   cp .env.example .env
+   ```
+   - Edit `.env` and configure:
+     - `MONGODB_URI` - Your MongoDB connection string
+     - `GEMINI_API_KEY` - Your Google Gemini API key
+     - `CLIENT_URL` - Your frontend URL (default: http://localhost:3000)
+     - `PORT` - Server port (default: 5000)
+
+## Running the Application
+
+### Development Mode
+
 ```bash
-git clone <repository-url>
-cd Inventory-Management/Server
+python app.py
 ```
 
-2. **Install dependencies**
+The server will start on `http://localhost:5000`
+
+### Production Mode
+
+Using Gunicorn with eventlet worker:
 
 ```bash
-npm install
+gunicorn --worker-class eventlet -w 1 --bind 0.0.0.0:5000 app:app
 ```
 
-3. **Create .env file**
+## API Documentation
 
-```bash
-cp .env.example .env
+### Base URL
+
+```
+http://localhost:5000/api
 ```
 
-Edit `.env` with your configurations:
+### Endpoints
+
+#### Inventory
+
+- `GET /inventory` - Get all inventory items (with filters & pagination)
+- `GET /inventory/:id` - Get single item
+- `POST /inventory` - Create new item
+- `PUT /inventory/:id` - Update item
+- `DELETE /inventory/:id` - Delete item
+- `GET /inventory/alerts/low-stock` - Get low stock items
+- `GET /inventory/alerts/expiring` - Get expiring items
+- `GET /inventory/stats/summary` - Get inventory statistics
+
+#### Transactions
+
+- `GET /transactions` - Get all transactions
+- `GET /transactions/item/:itemId` - Get item transactions
+- `POST /transactions/stock-in` - Add stock
+- `POST /transactions/stock-out` - Remove stock
+- `POST /transactions/adjustment` - Adjust stock
+- `GET /transactions/stats` - Get transaction statistics
+
+#### Analytics
+
+- `GET /analytics/dashboard` - Get dashboard analytics
+- `GET /analytics/top-items` - Get top performing items
+- `GET /analytics/slow-moving` - Get slow moving items
+- `GET /analytics/turnover` - Get inventory turnover metrics
+- `GET /analytics/sales-trends` - Get sales trends
+- `GET /analytics/value-trends` - Get inventory value trends
+
+#### Alerts
+
+- `GET /alerts` - Get all alerts
+- `GET /alerts/summary` - Get alert summary
+- `GET /alerts/low-stock` - Get low stock alerts
+- `GET /alerts/near-expiry` - Get near expiry alerts
+- `GET /alerts/expired` - Get expired items alerts
+- `GET /alerts/overstock` - Get overstock alerts
+
+#### Reports
+
+- `GET /reports/export/inventory/csv` - Export inventory as CSV
+- `GET /reports/export/inventory/pdf` - Export inventory as PDF
+- `GET /reports/export/transactions/csv` - Export transactions as CSV
+- `GET /reports/monthly?year=2024&month=1` - Get monthly report
+
+#### Forecasting (AI-Powered)
+
+- `GET /forecast/item/:itemId` - Forecast demand for specific item
+- `POST /forecast/restock-suggestions` - Get AI restock suggestions
+- `GET /forecast/batch` - Batch forecast for multiple items
+- `GET /forecast/history/:itemId` - Get historical sales data
+
+### WebSocket Events
+
+#### Client -> Server
+
+- `join:inventory` - Join inventory updates room
+- `join:alerts` - Join alerts room
+- `join:item` - Join specific item updates room
+- `request:alerts` - Request current alerts
+
+#### Server -> Client
+
+- `inventory:update` - Inventory item updated
+- `transaction:new` - New transaction created
+- `alert:new` - New alert triggered
+- `alert:low-stock` - Low stock alert
+- `alerts:summary` - Alert summary update
+- `alerts:update` - All alerts update
+
+## Project Structure
+
+```
+backend/
+├── app.py                  # Main application entry point
+├── requirements.txt        # Python dependencies
+├── .env.example           # Environment variables template
+├── config/
+│   ├── __init__.py
+│   └── database.py        # Database configuration
+├── models/
+│   ├── __init__.py
+│   ├── inventory_item.py  # Inventory item model
+│   └── stock_transaction.py # Transaction model
+├── routes/
+│   ├── __init__.py
+│   ├── inventory_routes.py
+│   ├── transaction_routes.py
+│   ├── analytics_routes.py
+│   ├── alert_routes.py
+│   ├── report_routes.py
+│   └── forecast_routes.py
+├── services/
+│   ├── __init__.py
+│   ├── alert_service.py
+│   ├── report_service.py
+│   └── forecast_service.py
+└── sockets/
+    ├── __init__.py
+    └── inventory_socket.py
+```
+
+## Differences from Node.js Version
+
+### Key Changes:
+
+1. **Framework**: Express → Flask
+2. **Database Driver**: Mongoose → PyMongo
+3. **WebSocket**: Socket.io → Flask-SocketIO
+4. **AI Integration**: @google/generative-ai → google-generativeai (Python SDK)
+5. **PDF Generation**: PDFKit → ReportLab
+6. **CSV Generation**: json2csv → Python csv module
+
+### Architecture:
+
+- Models are implemented as static classes instead of Mongoose schemas
+- Routes use Flask Blueprints instead of Express routers
+- Middleware functionality is handled through Flask decorators
+- Sessions/transactions use PyMongo's session management
+
+## Environment Variables
 
 ```env
+# Server Configuration
 PORT=5000
-MONGODB_URI=mongodb+srv://username:password@cluster.mongodb.net/Inventory
-NODE_ENV=development
-GEMINI_API_KEY=your_gemini_api_key_here
 CLIENT_URL=http://localhost:3000
+
+# Database Configuration
+MONGODB_URI=mongodb://localhost:27017/inventory_management
+
+# Security
+SECRET_KEY=your-secret-key-here
+
+# Gemini AI Configuration
+GEMINI_API_KEY=your_gemini_api_key_here
+
+# Environment
+FLASK_ENV=development
 ```
 
-4. **Seed the database** (optional but recommended)
+## Error Handling
+
+The API uses standard HTTP status codes:
+
+- `200` - Success
+- `201` - Created
+- `400` - Bad Request
+- `404` - Not Found
+- `500` - Internal Server Error
+
+All error responses follow this format:
+
+```json
+{
+  "success": false,
+  "message": "Error description",
+  "error": "Detailed error (in development only)"
+}
+```
+
+## Database Indexes
+
+The application automatically creates indexes for better performance:
+
+- Inventory: `sku` (unique), `category + status`, text search on `name + description`
+- Transactions: `itemId + transactionDate`, `type`, `transactionDate`
+
+## Contributing
+
+When contributing to this Flask backend:
+
+1. Follow PEP 8 Python style guidelines
+2. Add type hints where applicable
+3. Include docstrings for all functions and classes
+4. Test all endpoints before submitting PRs
+
+## Testing
+
+Run tests (if implemented):
 
 ```bash
-npm run seed
+pytest
 ```
 
-This will create 12 sample inventory items with transactions.
+## Troubleshooting
 
-5. **Start the server**
+### Common Issues:
 
-Development mode (with nodemon):
+1. **MongoDB Connection Error**
 
-```bash
-npm run dev
-```
+   - Ensure MongoDB is running
+   - Check `MONGODB_URI` in `.env`
 
-Production mode:
+2. **WebSocket Connection Failed**
 
-```bash
-npm start
-```
+   - Verify CORS settings
+   - Check `CLIENT_URL` matches frontend URL
 
-Server will run on `http://localhost:5000`
+3. **Gemini API Error**
 
-## 📚 API Documentation
+   - Verify `GEMINI_API_KEY` is valid
+   - Check API quota limits
 
-Complete API documentation is available in [`API_DOCUMENTATION_COMPLETE.md`](./API_DOCUMENTATION_COMPLETE.md)
+4. **Import Errors**
+   - Ensure virtual environment is activated
+   - Run `pip install -r requirements.txt`
 
-### Quick API Overview
+## License
 
-| Module       | Endpoints             | Description                       |
-| ------------ | --------------------- | --------------------------------- |
-| Inventory    | `/api/inventory/*`    | CRUD operations, alerts, stats    |
-| Transactions | `/api/transactions/*` | Stock IN/OUT, history             |
-| Analytics    | `/api/analytics/*`    | Dashboard, trends, insights       |
-| Alerts       | `/api/alerts/*`       | All alert types                   |
-| Forecasting  | `/api/forecast/*`     | AI predictions, batch forecasting |
-| Reports      | `/api/reports/*`      | CSV/PDF exports                   |
+MIT
 
-## 🧪 Testing the API
+## Support
 
-### Using cURL
-
-**Get all inventory items:**
-
-```bash
-curl http://localhost:5000/api/inventory
-```
-
-**Create new item:**
-
-```bash
-curl -X POST http://localhost:5000/api/inventory \
-  -H "Content-Type: application/json" \
-  -d '{
-    "name": "Test Product",
-    "sku": "TEST-001",
-    "category": "Electronics",
-    "quantity": 100,
-    "unit": "pcs",
-    "reorderLevel": 20,
-    "costPrice": 1000,
-    "sellingPrice": 1500
-  }'
-```
-
-**Get AI forecast:**
-
-```bash
-curl http://localhost:5000/api/forecast/item/{itemId}?days=30
-```
-
-**Natural language restock suggestion:**
-
-```bash
-curl -X POST http://localhost:5000/api/forecast/restock-suggestions \
-  -H "Content-Type: application/json" \
-  -d '{"query": "What should I restock this week?"}'
-```
-
-### Using Postman
-
-Import the API endpoints from the documentation or use the Postman collection (if available).
-
-## 🔌 WebSocket Usage
-
-### Connect to WebSocket
-
-```javascript
-const io = require("socket.io-client");
-const socket = io("http://localhost:5000");
-
-// Join inventory updates room
-socket.emit("join:inventory");
-
-// Listen for updates
-socket.on("inventory:update", (data) => {
-  console.log("Inventory updated:", data);
-});
-
-// Listen for low stock alerts
-socket.on("alert:low-stock", (alert) => {
-  console.log("Low stock alert:", alert);
-});
-```
-
-## 📁 Project Structure
-
-```
-Server/
-├── config/
-│   └── database.js          # MongoDB connection
-├── controllers/
-│   ├── inventoryController.js
-│   ├── transactionController.js
-│   ├── analyticsController.js
-│   ├── alertController.js
-│   ├── reportController.js
-│   └── forecastController.js
-├── models/
-│   ├── InventoryItem.js
-│   └── StockTransaction.js
-├── routes/
-│   ├── inventoryRoutes.js
-│   ├── transactionRoutes.js
-│   ├── analyticsRoutes.js
-│   ├── alertRoutes.js
-│   ├── reportRoutes.js
-│   └── forecastRoutes.js
-├── services/
-│   ├── alertService.js
-│   ├── reportService.js
-│   └── forecastService.js
-├── sockets/
-│   └── inventorySocket.js   # WebSocket handlers
-├── scripts/
-│   └── seed.js             # Database seeding
-├── .env
-├── index.js                # Main entry point
-└── package.json
-```
-
-## 🎯 Available Scripts
-
-| Script | Command        | Description                        |
-| ------ | -------------- | ---------------------------------- |
-| Start  | `npm start`    | Run in production mode             |
-| Dev    | `npm run dev`  | Run with nodemon (auto-reload)     |
-| Seed   | `npm run seed` | Populate database with sample data |
-
-## 🔐 Security Notes
-
-**For Production:**
-
-1. Add authentication (JWT/OAuth)
-2. Implement rate limiting
-3. Use HTTPS
-4. Sanitize inputs
-5. Add request validation middleware
-6. Secure WebSocket connections
-7. Hide sensitive error messages
-8. Use environment-specific configs
-
-## 📊 Database Schema
-
-### InventoryItem Schema
-
-- Basic info (name, SKU, description)
-- Categorization
-- Stock levels (quantity, reorder level, max stock)
-- Pricing (cost price, selling price)
-- Supplier details
-- Location & storage
-- Expiry & batch tracking
-- Virtual fields (stockStatus, expiryStatus)
-
-### StockTransaction Schema
-
-- Item reference
-- Transaction type (in/out/adjustment)
-- Quantity tracking
-- Reason & details
-- Party information
-- Financial data
-- Audit trail
-
-## 🤝 Contributing
-
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
-
-## 📝 License
-
-This project is licensed under the ISC License.
-
-## 🙏 Acknowledgments
-
-- Google Gemini AI for forecasting capabilities
-- MongoDB for database
-- Socket.io for real-time features
-
-## 📞 Support
-
-For issues and questions:
-
-- Create an issue in the repository
-- Check the [API Documentation](./API_DOCUMENTATION_COMPLETE.md)
-
----
-
-**Built with ❤️ for efficient inventory management**
+For issues and questions, please create an issue in the repository.

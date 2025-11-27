@@ -22,6 +22,7 @@ export default function ForecastingPage() {
   const [aiResponse, setAiResponse] = useState("");
   const [aiLoading, setAiLoading] = useState(false);
   const [showNewBadge, setShowNewBadge] = useState(false);
+  const [showAIModal, setShowAIModal] = useState(false);
 
   useEffect(() => {
     fetchItems();
@@ -42,7 +43,7 @@ export default function ForecastingPage() {
 
     try {
       setLoading(true);
-      const response = await forecastAPI.getItemForecast(selectedItem._id, 30);
+      const response = await forecastAPI.getItemForecast(selectedItem.id, 30);
       setForecast(response.data);
     } catch (error: unknown) {
       const err = error as { response?: { data?: { message?: string } } };
@@ -138,18 +139,27 @@ export default function ForecastingPage() {
   return (
     <div className="p-6">
       {/* Header */}
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold text-gray-900">
-          AI Forecasting & Insights
-        </h1>
-        <p className="text-gray-600 mt-1">
-          AI-powered demand forecasting and restock suggestions
-        </p>
+      <div className="mb-6 flex justify-between items-center">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900">
+            AI Forecasting & Insights
+          </h1>
+          <p className="text-gray-600 mt-1">
+            AI-powered demand forecasting and restock suggestions
+          </p>
+        </div>
+        <button
+          onClick={() => setShowAIModal(true)}
+          className="flex items-center space-x-2 px-6 py-3 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-lg hover:from-purple-700 hover:to-indigo-700 shadow-lg hover:shadow-xl transition-all duration-200"
+        >
+          <Brain className="w-5 h-5" />
+          <span className="font-semibold">Open AI Assistant</span>
+        </button>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Left Panel - Item Selection & Forecast */}
-        <div className="lg:col-span-2 space-y-6">
+      <div className="grid grid-cols-1 gap-6">
+        {/* Item Selection & Forecast */}
+        <div className="space-y-6">
           {/* Item Selection */}
           <div className="bg-white p-6 rounded-lg shadow">
             <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
@@ -159,9 +169,9 @@ export default function ForecastingPage() {
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
               <select
-                value={selectedItem?._id || ""}
+                value={selectedItem?.id || ""}
                 onChange={(e) => {
-                  const item = items.find((i) => i._id === e.target.value);
+                  const item = items.find((i) => i.id === e.target.value);
                   setSelectedItem(item || null);
                   setForecast(null);
                 }}
@@ -169,7 +179,7 @@ export default function ForecastingPage() {
               >
                 <option value="">Select an item...</option>
                 {items.map((item) => (
-                  <option key={item._id} value={item._id}>
+                  <option key={item.id} value={item.id}>
                     {item.name} ({item.sku}) - {item.quantity} {item.unit}
                   </option>
                 ))}
@@ -315,12 +325,14 @@ export default function ForecastingPage() {
             </div>
           )}
         </div>
+      </div>
 
-        {/* Right Panel - AI Chat */}
-        <div className="lg:col-span-1">
-          <div className="bg-white rounded-xl shadow-2xl overflow-hidden sticky top-6 border border-gray-100">
-            {/* Header with Gradient */}
-            <div className="bg-gradient-to-r from-purple-600 via-indigo-600 to-blue-600 p-6 relative overflow-hidden">
+      {/* AI Assistant Modal */}
+      {showAIModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden animate-fadeIn">
+            {/* Modal Header */}
+            <div className="bg-gradient-to-r from-purple-600 via-indigo-600 to-blue-600 p-6 relative overflow-hidden flex-shrink-0">
               {/* Animated Background Pattern */}
               <div className="absolute inset-0 opacity-10">
                 <div
@@ -336,34 +348,46 @@ export default function ForecastingPage() {
               <div className="relative">
                 <div className="flex items-center justify-between mb-2">
                   <div className="flex items-center space-x-3">
-                    <div className="bg-white/20 backdrop-blur-sm p-2 rounded-lg">
-                      <Brain className="w-6 h-6 text-white" />
+                    <div className="bg-white/20 backdrop-blur-sm p-3 rounded-xl">
+                      <Brain className="w-8 h-8 text-white" />
                     </div>
                     <div>
-                      <h2 className="text-xl font-bold text-white">
+                      <h2 className="text-2xl font-bold text-white">
                         AI Assistant
                       </h2>
-                      <p className="text-xs text-purple-100">
-                        Powered by Gemini
+                      <p className="text-sm text-purple-100">
+                        Powered by Gemini 2.0 Flash
                       </p>
                     </div>
                   </div>
-                  {showNewBadge && (
-                    <span className="flex items-center space-x-1 bg-green-400 text-green-900 px-3 py-1 rounded-full animate-pulse text-xs font-semibold shadow-lg">
-                      <span className="w-2 h-2 bg-green-600 rounded-full animate-ping"></span>
-                      <span>New</span>
-                    </span>
-                  )}
+                  <button
+                    onClick={() => setShowAIModal(false)}
+                    className="bg-white/20 hover:bg-white/30 p-2 rounded-lg transition-colors"
+                  >
+                    <svg
+                      className="w-6 h-6 text-white"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M6 18L18 6M6 6l12 12"
+                      />
+                    </svg>
+                  </button>
                 </div>
-                <p className="text-sm text-purple-50 leading-relaxed">
+                <p className="text-base text-purple-50 leading-relaxed">
                   Get intelligent insights about your inventory restocking needs
                 </p>
               </div>
             </div>
 
             {/* Chat Messages Area */}
-            <div className="p-4 bg-gray-50">
-              <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-4 min-h-[340px] max-h-[400px] overflow-y-auto custom-scrollbar">
+            <div className="flex-1 p-6 bg-gray-50 overflow-y-auto">
+              <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-6 min-h-[450px]">
                 {aiResponse ? (
                   <div className="space-y-3 animate-fadeIn">
                     {/* AI Response Badge */}
@@ -486,8 +510,8 @@ export default function ForecastingPage() {
             </div>
 
             {/* Input Area */}
-            <div className="p-4 bg-white border-t border-gray-200">
-              <div className="flex space-x-2">
+            <div className="p-6 bg-white border-t border-gray-200 flex-shrink-0">
+              <div className="flex space-x-3">
                 <div className="flex-1 relative">
                   <input
                     type="text"
@@ -497,13 +521,13 @@ export default function ForecastingPage() {
                       e.key === "Enter" && !aiLoading && handleAIQuery()
                     }
                     placeholder="Type your question here..."
-                    className="w-full px-4 py-3 pr-10 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-gray-900 placeholder-gray-400 text-sm transition-all disabled:bg-gray-100 disabled:cursor-not-allowed"
+                    className="w-full px-5 py-4 pr-12 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-gray-900 placeholder-gray-400 text-base transition-all disabled:bg-gray-100 disabled:cursor-not-allowed"
                     disabled={aiLoading}
                   />
                   {aiQuery && !aiLoading && (
                     <button
                       onClick={() => setAiQuery("")}
-                      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                      className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 text-xl"
                     >
                       ✕
                     </button>
@@ -513,34 +537,34 @@ export default function ForecastingPage() {
                   type="button"
                   onClick={handleAIQuery}
                   disabled={aiLoading || !aiQuery.trim()}
-                  className="px-5 py-3 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-lg hover:from-purple-700 hover:to-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-md hover:shadow-lg flex items-center space-x-2 font-semibold"
+                  className="px-8 py-4 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-xl hover:from-purple-700 hover:to-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-lg hover:shadow-xl flex items-center space-x-3 font-semibold text-base"
                 >
                   {aiLoading ? (
                     <>
-                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                      <span className="text-sm">Thinking...</span>
+                      <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                      <span>Thinking...</span>
                     </>
                   ) : (
                     <>
-                      <Send className="w-4 h-4" />
-                      <span className="text-sm">Send</span>
+                      <Send className="w-5 h-5" />
+                      <span>Send</span>
                     </>
                   )}
                 </button>
               </div>
               {aiLoading && (
-                <div className="mt-2 flex items-center space-x-2 text-xs text-gray-500">
+                <div className="mt-3 flex items-center space-x-2 text-sm text-gray-600">
                   <div className="flex space-x-1">
                     <div
-                      className="w-2 h-2 bg-indigo-400 rounded-full animate-bounce"
+                      className="w-2.5 h-2.5 bg-indigo-500 rounded-full animate-bounce"
                       style={{ animationDelay: "0ms" }}
                     ></div>
                     <div
-                      className="w-2 h-2 bg-indigo-400 rounded-full animate-bounce"
+                      className="w-2.5 h-2.5 bg-indigo-500 rounded-full animate-bounce"
                       style={{ animationDelay: "150ms" }}
                     ></div>
                     <div
-                      className="w-2 h-2 bg-indigo-400 rounded-full animate-bounce"
+                      className="w-2.5 h-2.5 bg-indigo-500 rounded-full animate-bounce"
                       style={{ animationDelay: "300ms" }}
                     ></div>
                   </div>
@@ -550,7 +574,7 @@ export default function ForecastingPage() {
             </div>
           </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }

@@ -21,9 +21,6 @@ google-generativeai==0.3.2
 # PDF Generation
 reportlab==4.0.7
 
-# Utilities
-bson==0.5.10
-
 # WSGI Server (for production)
 gunicorn==21.2.0
 eventlet==0.33.3

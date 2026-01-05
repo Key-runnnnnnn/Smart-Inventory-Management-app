@@ -43,7 +43,7 @@ export default function ForecastingPage() {
 
     try {
       setLoading(true);
-      const response = await forecastAPI.getItemForecast(selectedItem.id, 30);
+      const response = await forecastAPI.getItemForecast(selectedItem._id, 30);
       setForecast(response.data);
     } catch (error: unknown) {
       const err = error as { response?: { data?: { message?: string } } };
@@ -169,9 +169,9 @@ export default function ForecastingPage() {
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
               <select
-                value={selectedItem?.id || ""}
+                value={selectedItem?._id || ""}
                 onChange={(e) => {
-                  const item = items.find((i) => i.id === e.target.value);
+                  const item = items.find((i) => i._id === e.target.value);
                   setSelectedItem(item || null);
                   setForecast(null);
                 }}
@@ -179,7 +179,7 @@ export default function ForecastingPage() {
               >
                 <option value="">Select an item...</option>
                 {items.map((item) => (
-                  <option key={item.id} value={item.id}>
+                  <option key={item._id} value={item._id}>
                     {item.name} ({item.sku}) - {item.quantity} {item.unit}
                   </option>
                 ))}
@@ -356,7 +356,7 @@ export default function ForecastingPage() {
                         AI Assistant
                       </h2>
                       <p className="text-sm text-purple-100">
-                        Powered by Gemini 2.0 Flash
+                        Powered by Gemini AI
                       </p>
                     </div>
                   </div>

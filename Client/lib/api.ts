@@ -136,10 +136,6 @@ export const forecastAPI = {
     apiClient.get(`/forecast/item/${itemId}`, { params: { days } }),
   getRestockSuggestions: (query: string) =>
     apiClient.post("/forecast/restock-suggestions", { query }),
-  getBatchForecast: (params?: Record<string, unknown>) =>
-    apiClient.get("/forecast/batch", { params }),
-  getHistory: (itemId: string, days?: number) =>
-    apiClient.get(`/forecast/history/${itemId}`, { params: { days } }),
 };
 
 // ============= REPORTS API =============

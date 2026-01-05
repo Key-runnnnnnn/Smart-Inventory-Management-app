@@ -1,6 +1,6 @@
 from flask import Blueprint, request, jsonify
 from bson.objectid import ObjectId
-from datetime import datetime
+from datetime import datetime, timedelta
 import re
 
 from models.inventory_item import InventoryItem
@@ -255,8 +255,7 @@ def get_expiring_items():
     try:
         days_threshold = int(request.args.get('days', 30))
         today = datetime.utcnow()
-        future_date = datetime.utcnow()
-        future_date = future_date.replace(day=today.day + days_threshold)
+        future_date = today + timedelta(days=days_threshold)
 
         collection = InventoryItem.get_collection()
 

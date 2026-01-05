@@ -55,9 +55,9 @@ class ForecastService:
         try:
             # Check if API key is configured
             api_key = os.getenv('GEMINI_API_KEY')
-            if not api_key or api_key == 'your_gemini_api_key_here':
-                raise Exception(
-                    'Gemini API key not configured. Please set GEMINI_API_KEY in .env file')
+            # if not api_key or api_key == 'your_gemini_api_key_here':
+            #     raise Exception(
+            #         'Gemini API key not configured. Please set GEMINI_API_KEY in .env file')
 
             # Get item details
             item = InventoryItem.find_by_id(item_id)
@@ -123,7 +123,7 @@ Based on this data, provide a forecast for the next {forecast_days} days. Return
 }}"""
 
             # Call Gemini API
-            model = genai.GenerativeModel('gemini-2.0-flash')
+            model = genai.GenerativeModel('gemini-2.5-flash')
             result = model.generate_content(prompt)
             text = result.text
 
@@ -169,10 +169,7 @@ Based on this data, provide a forecast for the next {forecast_days} days. Return
             }
         except Exception as e:
             # If Gemini API fails, return basic forecast
-            error_str = str(e)
-            if 'API_KEY_INVALID' in error_str or 'API Key not found' in error_str or 'Gemini API key not configured' in error_str:
-                return ForecastService._get_basic_item_forecast(item_id, forecast_days)
-            raise Exception(f'Error forecasting with Gemini: {error_str}')
+            return ForecastService._get_basic_item_forecast(item_id, forecast_days)
 
     @staticmethod
     def get_restock_suggestions(natural_language_query):
@@ -265,7 +262,7 @@ Include in your response:
 
 Make the response clear, actionable, and well-structured."""
 
-            model = genai.GenerativeModel('gemini-2.0-flash')
+            model = genai.GenerativeModel('gemini-2.5-flash')
             result = model.generate_content(prompt)
             suggestion = result.text
 
@@ -281,78 +278,7 @@ Make the response clear, actionable, and well-structured."""
             }
         except Exception as e:
             # If Gemini API fails, fallback to basic suggestions
-            if 'API_KEY_INVALID' in str(e) or 'API Key not found' in str(e):
-                return ForecastService._get_basic_restock_suggestions(natural_language_query)
-            raise Exception(f'Error generating restock suggestions: {str(e)}')
-
-    @staticmethod
-    def batch_forecast(category=None, limit=10):
-        """Batch forecast for multiple items"""
-        try:
-            filter_dict = {'status': 'active'}
-            if category:
-                filter_dict['category'] = category
-
-            trans_collection = StockTransaction.get_collection()
-            thirty_days_ago = datetime.utcnow() - timedelta(days=30)
-
-            # Get items with recent sales
-            pipeline = [
-                {
-                    '$match': {
-                        'type': 'out',
-                        'reason': 'sale',
-                        'transactionDate': {'$gte': thirty_days_ago}
-                    }
-                },
-                {
-                    '$group': {
-                        '_id': '$itemId',
-                        'totalSold': {'$sum': '$quantity'}
-                    }
-                },
-                {'$sort': {'totalSold': -1}},
-                {'$limit': limit}
-            ]
-            recent_sales = list(trans_collection.aggregate(pipeline))
-
-            item_ids = [s['_id'] for s in recent_sales]
-            collection = InventoryItem.get_collection()
-            items = list(collection.find({'_id': {'$in': item_ids}}))
-
-            # Simple forecasts for batch
-            forecasts = []
-            for item in items:
-                historical_data = ForecastService.get_historical_sales_data(
-                    str(item['_id']), 30)
-                total_sales = sum(d['quantity'] for d in historical_data)
-                avg_daily_sales = total_sales / \
-                    len(historical_data) if historical_data else 0
-                predicted_demand = round(avg_daily_sales * 30)
-                recommended_reorder = max(
-                    item['reorderLevel'], round(avg_daily_sales * 14))
-
-                forecasts.append({
-                    'itemId': str(item['_id']),
-                    'itemName': item['name'],
-                    'sku': item['sku'],
-                    'category': item['category'],
-                    'currentStock': item['quantity'],
-                    'reorderLevel': item['reorderLevel'],
-                    'predictedDemand30Days': predicted_demand,
-                    'recommendedReorderQuantity': recommended_reorder,
-                    'avgDailySales': f'{avg_daily_sales:.2f}',
-                    'needsRestock': item['quantity'] <= item['reorderLevel']
-                })
-
-            return {
-                'totalItems': len(forecasts),
-                'category': category or 'all',
-                'forecasts': forecasts,
-                'generatedAt': datetime.utcnow().isoformat()
-            }
-        except Exception as e:
-            raise Exception(f'Error in batch forecast: {str(e)}')
+            return ForecastService._get_basic_restock_suggestions(natural_language_query)
 
     @staticmethod
     def _get_basic_restock_suggestions(natural_language_query):
@@ -396,10 +322,6 @@ Make the response clear, actionable, and well-structured."""
             if not out_of_stock and not low_stock_items:
                 response += "### 🟢 Good News!\n\n"
                 response += "All items are currently above their reorder levels. No immediate restocking needed.\n\n"
-
-            response += "\n### 💡 Tip\n\n"
-            response += "To get AI-powered insights and predictions, please configure a valid Gemini API key in your `.env` file.\n"
-            response += "Get your free API key at: https://makersuite.google.com/app/apikey"
 
             return {
                 'query': natural_language_query,

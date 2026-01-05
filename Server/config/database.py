@@ -37,7 +37,6 @@ def init_db(app):
         print('   2. Your IP address is whitelisted in Atlas')
         print('   3. Your internet connection is working')
         print('   4. The connection string is correct')
-        # Don't raise the error - allow server to start
         return None
     except Exception as e:
         print(f'❌ Unexpected error: {str(e)}')

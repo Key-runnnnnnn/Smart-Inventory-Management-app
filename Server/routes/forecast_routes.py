@@ -50,27 +50,6 @@ def get_ai_restock_suggestions():
         }), 500
 
 
-@bp.route('/batch', methods=['GET'])
-def get_batch_forecast():
-    """Batch forecast for multiple items"""
-    try:
-        category = request.args.get('category')
-        limit = int(request.args.get('limit', 10))
-
-        forecasts = ForecastService.batch_forecast(category, limit)
-
-        return jsonify({
-            'success': True,
-            'data': forecasts
-        }), 200
-    except Exception as e:
-        return jsonify({
-            'success': False,
-            'message': 'Error generating batch forecast',
-            'error': str(e)
-        }), 500
-
-
 @bp.route('/history/<item_id>', methods=['GET'])
 def get_historical_data(item_id):
     """Get historical sales data for an item"""
